@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Đăng nhập - Quản lý cửa hàng POS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-container {
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h3 class="text-center mb-4">Đăng nhập hệ thống</h3>
+    <div id="error-message" class="alert alert-danger d-none"></div>
+    <form id="login-form">
+      <div class="mb-3">
+        <label for="username" class="form-label">Tên đăng nhập</label>
+        <input type="text" class="form-control" id="username" name="username" required>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Mật khẩu</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100" id="login-btn">Đăng nhập</button>
+    </form>
+  </div>
+
+  <script src="/public/js/auth.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const errorMsg = document.getElementById('error-message');
+      const btn = document.getElementById('login-btn');
+      
+      errorMsg.classList.add('d-none');
+      btn.disabled = true;
+      btn.textContent = 'Đang xử lý...';
+
+      try {
+        let token = await fetchCsrfToken();
+        
+        let response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': token
+          },
+          body: JSON.stringify({ username, password })
+        });
+
+        // Nếu lỗi 403, có thể token cũ không hợp lệ, tải lại token và thử lại
+        if (response.status === 403) {
+          token = await fetchCsrfToken(true);
+          response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-Token': token
+            },
+            body: JSON.stringify({ username, password })
+          });
+        }
+
+        const data = await response.json();
+
+        if (response.ok) {
+          if (window.loginCountdownTimer) {
+            clearInterval(window.loginCountdownTimer);
+            window.loginCountdownTimer = null;
+          }
+          csrfToken = data.csrfToken;
+          if (data.role === 'CASHIER') {
+            window.location.href = '/sales';
+          } else {
+            window.location.href = '/';
+          }
+        } else {
+          if (window.loginCountdownTimer) {
+            clearInterval(window.loginCountdownTimer);
+            window.loginCountdownTimer = null;
+          }
+
+          errorMsg.className = 'alert alert-danger';
+          errorMsg.textContent = data.error || 'Lỗi đăng nhập';
+          errorMsg.classList.remove('d-none');
+
+          if (data.retryAfterSeconds && Number(data.retryAfterSeconds) > 0) {
+            let remain = Number(data.retryAfterSeconds);
+            window.loginCountdownTimer = setInterval(() => {
+              remain--;
+              if (remain <= 0) {
+                clearInterval(window.loginCountdownTimer);
+                window.loginCountdownTimer = null;
+                errorMsg.className = 'alert alert-info';
+                errorMsg.textContent = 'Thời gian tạm khóa đã hết. Bạn có thể thử đăng nhập lại.';
+              } else {
+                const m = Math.floor(remain / 60);
+                const s = remain % 60;
+                const timeStr = m > 0 ? `${m} phút ${s} giây` : `${s} giây`;
+                errorMsg.textContent = `Quá nhiều lần thử sai. Vui lòng thử lại sau ${timeStr}.`;
+              }
+            }, 1000);
+          }
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Không thể kết nối đến máy chủ';
+        errorMsg.classList.remove('d-none');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Đăng nhập';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý sản phẩm - POS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .badge-active { background-color: #198754; }
+    .badge-inactive { background-color: #6c757d; }
+    .table th { font-weight: 600; font-size: 0.9rem; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+      <div>
+        <h2 class="h3 mb-1 fw-bold text-dark">📦 Quản lý sản phẩm</h2>
+        <p class="text-muted small mb-0">Xem danh mục, thêm mới, sửa thông tin SKU/giá và quản lý trạng thái kinh doanh</p>
+      </div>
+      <div>
+        <button class="btn btn-primary px-3 shadow-sm" id="btn-add-product" onclick="showAddProductModal()">
+          <i class="bi bi-plus-lg me-1"></i> Thêm Sản Phẩm Mới
+        </button>
+      </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-6 col-lg-5">
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" id="search-products" class="form-control" placeholder="Tìm theo SKU hoặc tên sản phẩm...">
+            </div>
+          </div>
+          <div class="col-md-4 col-lg-3">
+            <select id="filter-status" class="form-select">
+              <option value="all">-- Tất cả trạng thái --</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="inactive">Ngừng kinh doanh</option>
+            </select>
+          </div>
+          <div class="col-md-2 col-lg-2">
+            <button class="btn btn-outline-secondary w-100" id="btn-reset-filter" onclick="resetFilters()">
+              <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="products-table">
+            <thead class="table-light border-bottom">
+              <tr>
+                <th class="ps-3 py-3" style="width: 130px;">Mã SKU</th>
+                <th class="py-3">Tên sản phẩm</th>
+                <th class="py-3 text-center" style="width: 90px;">ĐVT</th>
+                <th class="py-3 text-end" style="width: 140px;">Giá bán (VNĐ)</th>
+                <th class="py-3 text-center" style="width: 110px;">Tồn kho</th>
+                <th class="py-3 text-center" style="width: 150px;">Trạng thái</th>
+                <th class="py-3 text-end pe-3" style="width: 220px;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="products-tbody">
+              <tr>
+                <td colspan="7" class="text-center text-muted py-4">Đang tải dữ liệu sản phẩm...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Pagination Footer -->
+      <div class="card-footer bg-white border-top py-3 d-flex flex-wrap justify-content-between align-items-center">
+        <div class="text-muted small mb-2 mb-md-0" id="pagination-info">
+          Hiển thị 0 trên 0 sản phẩm
+        </div>
+        <nav aria-label="Phân trang sản phẩm">
+          <ul class="pagination pagination-sm mb-0" id="pagination-controls">
+            <!-- Dynamic pagination links -->
+          </ul>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Modal Thêm / Sửa Sản Phẩm -->
+    <div class="modal fade" id="product-modal" tabindex="-1" aria-labelledby="product-modal-title" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+          <div class="modal-header bg-light">
+            <h5 class="modal-title fw-bold" id="product-modal-title">Thêm Sản Phẩm Mới</h5>
+            <button type="button" class="btn-close" onclick="closeModal('product-modal')" aria-label="Đóng"></button>
+          </div>
+          <div class="modal-body p-4">
+            <input type="hidden" id="p-id">
+
+            <div class="mb-3">
+              <label for="p-sku" class="form-label fw-bold">Mã SKU <span class="text-danger">*</span></label>
+              <input type="text" id="p-sku" class="form-control" placeholder="Ví dụ: BUTBI001, TAPVO002" autocomplete="off">
+              <div class="form-text small text-muted">Mã SKU định danh duy nhất của sản phẩm trong kho.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="p-name" class="form-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+              <input type="text" id="p-name" class="form-control" placeholder="Nhập tên sản phẩm đầy đủ" autocomplete="off">
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="p-unit" class="form-label fw-bold">Đơn vị tính <span class="text-danger">*</span></label>
+                <input type="text" id="p-unit" class="form-control" placeholder="Cái, Hộp, Cây, Cuốn...">
+              </div>
+              <div class="col-6">
+                <label for="p-price" class="form-label fw-bold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                <input type="number" id="p-price" class="form-control" placeholder="0" min="0" step="100">
+              </div>
+            </div>
+
+            <!-- Khung thông báo Tồn kho (Chống sửa tồn trực tiếp) -->
+            <div id="p-stock-notice" class="mb-3">
+              <div class="alert alert-info py-2 small mb-0">
+                <i class="bi bi-info-circle me-1"></i> <strong>Tồn kho ban đầu: 0</strong>. Theo quy định hệ thống, số lượng tồn kho không thể sửa trực tiếp mà chỉ được cập nhật qua <em>Phiếu Nhập Hàng</em>.
+              </div>
+            </div>
+
+            <!-- Khung báo lỗi -->
+            <div id="p-error" class="alert alert-danger d-none py-2 small mb-0"></div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary px-3" onclick="closeModal('product-modal')">Hủy</button>
+            <button type="button" class="btn btn-primary px-4" id="btn-save-product" onclick="saveProduct()">
+              <i class="bi bi-check-lg me-1"></i> Lưu Sản Phẩm
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Giải Thích & Gợi Ý Khi Không Thể Xóa -->
+    <div class="modal fade" id="delete-fail-modal" tabindex="-1" aria-labelledby="delete-fail-modal-title" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.5);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow border-0">
+          <div class="modal-header bg-warning bg-opacity-10 border-bottom border-warning">
+            <h5 class="modal-title fw-bold text-dark" id="delete-fail-modal-title">
+              <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Không Thể Xóa Sản Phẩm
+            </h5>
+            <button type="button" class="btn-close" onclick="closeModal('delete-fail-modal')" aria-label="Đóng"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="alert alert-danger mb-3" id="delete-fail-reason">
+              <!-- Lý do chi tiết -->
+            </div>
+            <div class="alert alert-info mb-0">
+              <h6 class="fw-bold mb-1"><i class="bi bi-lightbulb-fill text-primary me-1"></i> Giải pháp khuyến nghị:</h6>
+              <p class="mb-2 small" id="delete-fail-suggest">
+                Để bảo toàn tính toàn vẹn dữ liệu kế toán và chứng từ lịch sử (hóa đơn, phiếu nhập, biến động kho), bạn hãy chuyển trạng thái sản phẩm sang <strong>Ngừng kinh doanh</strong>.
+              </p>
+              <p class="mb-0 small text-muted">
+                Khi ngừng kinh doanh, hệ thống sẽ chặn bán mới sản phẩm này, nhưng toàn bộ lịch sử hóa đơn và báo cáo doanh thu cũ vẫn được bảo lưu đầy đủ.
+              </p>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary px-3" onclick="closeModal('delete-fail-modal')">Đóng</button>
+            <button type="button" class="btn btn-warning fw-semibold px-3" id="btn-switch-to-inactive" onclick="confirmSwitchToInactive()">
+              <i class="bi bi-slash-circle me-1"></i> Chuyển sang Ngừng kinh doanh
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/public/js/auth.js"></script>
+  <script src="/public/js/layout.js"></script>
+  <script src="/public/js/products.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Nhập Hàng - POS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .table th { font-weight: 600; font-size: 0.9rem; }
+    .card-header h5 { font-size: 1.05rem; }
+    .editing-row { background-color: #fff3cd !important; }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container-fluid py-4 px-md-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+      <div>
+        <h2 class="h3 mb-1 fw-bold text-dark"><i class="bi bi-box-arrow-in-down me-2 text-primary"></i>Quản Lý Nhập Hàng</h2>
+        <p class="text-muted small mb-0">Tạo phiếu nhập kho nhiều dòng, cập nhật tồn kho an toàn và tra cứu chứng từ lịch sử</p>
+      </div>
+      <div>
+        <button class="btn btn-outline-secondary btn-sm" id="btn-reset-form" onclick="resetForm(true)">
+          <i class="bi bi-arrow-clockwise me-1"></i> Làm mới biểu mẫu
+        </button>
+      </div>
+    </div>
+
+    <!-- Alert thông báo trạng thái -->
+    <div id="receipt-msg" class="alert d-none mb-3" role="alert"></div>
+    
+    <div class="row g-4">
+      <!-- Cột Trái: Lập Phiếu Nhập Hàng -->
+      <div class="col-xl-7 col-lg-6">
+        <div class="card mb-4 shadow-sm border-0">
+          <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-file-earmark-plus me-2"></i>Lập Phiếu Nhập Kho Mới</h5>
+          </div>
+          <div class="card-body p-3 p-md-4">
+            <form id="receipt-form" onsubmit="event.preventDefault(); return false;">
+              <!-- Thông tin chung phiếu nhập -->
+              <div class="mb-3">
+                <label for="r-no" class="form-label fw-bold">Mã số chứng từ / Phiếu nhập:</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white"><i class="bi bi-upc-scan"></i></span>
+                  <input type="text" id="r-no" class="form-control" placeholder="VD: PN001, NH001 (để trống hệ thống tự sinh mã PN...)">
+                </div>
+                <div class="form-text small text-muted">Mã chứng từ định danh duy nhất của phiếu nhập hàng trong hệ thống.</div>
+              </div>
+
+              <!-- Khung Thêm / Sửa Dòng Sản Phẩm -->
+              <div class="card bg-light p-3 mb-3 border" id="item-form-card">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="fw-bold mb-0 text-dark" id="item-form-title">
+                    <i class="bi bi-plus-circle text-primary me-1"></i> Thêm Dòng Sản Phẩm Vào Phiếu:
+                  </h6>
+                  <span id="editing-badge" class="badge bg-warning text-dark d-none">Đang chỉnh sửa dòng</span>
+                </div>
+
+                <!-- Ô tìm nhanh sản phẩm -->
+                <div class="mb-2">
+                  <input type="text" id="r-product-search" class="form-control form-control-sm" placeholder="🔍 Gõ tìm nhanh theo tên hoặc mã SKU sản phẩm...">
+                </div>
+
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-5">
+                    <label for="r-product" class="form-label small fw-bold mb-1">Chọn sản phẩm <span class="text-danger">*</span></label>
+                    <select id="r-product" class="form-select"></select>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="r-qty" class="form-label small fw-bold mb-1">Số lượng <span class="text-danger">*</span></label>
+                    <input type="number" id="r-qty" class="form-control" placeholder="SL nguyên dương" min="1" step="1">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="r-cost" class="form-label small fw-bold mb-1">Giá nhập (VNĐ) <span class="text-danger">*</span></label>
+                    <input type="number" id="r-cost" class="form-control" placeholder=">= 0" min="0" step="100">
+                  </div>
+                </div>
+
+                <div class="mt-3 d-flex justify-content-end gap-2">
+                  <button type="button" id="btn-cancel-edit" class="btn btn-outline-secondary btn-sm d-none" onclick="cancelEditItem()">
+                    <i class="bi bi-x-circle me-1"></i> Hủy sửa
+                  </button>
+                  <button type="button" id="btn-add-item" class="btn btn-success btn-sm px-3" onclick="addOrUpdateReceiptItem(event)">
+                    <i class="bi bi-plus-lg me-1"></i> Thêm vào phiếu
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bảng Giỏ Hàng Phiếu Nhập (Nhiều dòng) -->
+              <div class="table-responsive mb-3 border rounded">
+                <table class="table table-hover align-middle mb-0" id="r-cart">
+                  <thead class="table-light border-bottom">
+                    <tr>
+                      <th class="text-center" style="width: 40px;">#</th>
+                      <th>Sản Phẩm</th>
+                      <th class="text-center" style="width: 70px;">ĐVT</th>
+                      <th class="text-center" style="width: 85px;">SL</th>
+                      <th class="text-end" style="width: 120px;">Giá Nhập</th>
+                      <th class="text-end" style="width: 130px;">Thành Tiền</th>
+                      <th class="text-center" style="width: 110px;">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td colspan="7" class="text-center text-muted py-3">Chưa có sản phẩm nào trong phiếu nhập</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Tổng Tiền & Nút Hoàn Tất -->
+              <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded border mb-3">
+                <span class="fs-6 fw-bold text-dark">Tổng tiền phiếu nhập:</span>
+                <span class="fs-4 fw-bold text-danger" id="r-total">0 đ</span>
+              </div>
+
+              <button type="button" id="btn-save-receipt" class="btn btn-primary btn-lg w-100 shadow-sm" onclick="saveReceipt(event)">
+                <i class="bi bi-check2-circle me-1"></i> Hoàn Tất Nhập Hàng
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cột Phải: Lịch Sử Nhập Hàng (Tìm kiếm, Lọc ngày, Phân trang) -->
+      <div class="col-xl-5 col-lg-6">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Lịch Sử Nhập Hàng</h5>
+            <button type="button" class="btn btn-sm btn-outline-light" onclick="loadHistory(1)">
+              <i class="bi bi-arrow-repeat"></i>
+            </button>
+          </div>
+          <div class="card-body p-3">
+            <!-- Bộ lọc tìm kiếm lịch sử -->
+            <div class="row g-2 mb-3">
+              <div class="col-12">
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                  <input type="text" id="history-search" class="form-control" placeholder="Tìm theo mã phiếu nhập...">
+                </div>
+              </div>
+              <div class="col-6">
+                <label for="history-from-date" class="form-label small text-muted mb-0">Từ ngày:</label>
+                <input type="date" id="history-from-date" class="form-control form-control-sm">
+              </div>
+              <div class="col-6">
+                <label for="history-to-date" class="form-label small text-muted mb-0">Đến ngày:</label>
+                <input type="date" id="history-to-date" class="form-control form-control-sm">
+              </div>
+              <div class="col-12 d-flex justify-content-end gap-2 pt-1">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetHistoryFilters()">
+                  <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
+                </button>
+                <button type="button" class="btn btn-primary btn-sm px-3" onclick="loadHistory(1)">
+                  <i class="bi bi-filter me-1"></i> Lọc phiếu
+                </button>
+              </div>
+              <!-- Thông báo lỗi bộ lọc lịch sử -->
+              <div id="history-filter-error" class="alert alert-danger py-2 px-3 small mt-2 mb-0" style="display: none;" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <span id="history-filter-error-text"></span>
+              </div>
+            </div>
+
+            <!-- Danh sách phiếu nhập -->
+            <div class="list-group list-group-flush border rounded mb-3" id="r-history">
+              <div class="text-center text-muted py-4">Đang tải lịch sử phiếu nhập...</div>
+            </div>
+
+            <!-- Phân trang lịch sử -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center pt-2">
+              <div class="text-muted small mb-2 mb-sm-0" id="history-pagination-info">
+                Hiển thị 0 / 0 phiếu
+              </div>
+              <nav aria-label="Phân trang lịch sử phiếu nhập">
+                <ul class="pagination pagination-sm mb-0" id="history-pagination-controls"></ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Chi Tiết Phiếu Nhập -->
+  <div class="modal fade" id="receipt-detail-modal" tabindex="-1" aria-labelledby="receipt-modal-title" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content shadow border-0">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title fw-bold" id="receipt-modal-title">Chi Tiết Phiếu Nhập</h5>
+          <button type="button" class="btn-close btn-close-white" aria-label="Close" onclick="closeReceiptModal()"></button>
+        </div>
+        <div class="modal-body p-4" id="receipt-modal-body">
+          <!-- Nội dung chi tiết phiếu -->
+        </div>
+        <div class="modal-footer bg-light justify-content-between">
+          <div class="small text-muted">
+            <i class="bi bi-shield-lock me-1"></i> Chứng từ đã ghi nhận, không cho phép sửa/xóa.
+          </div>
+          <button type="button" class="btn btn-secondary px-4" onclick="closeReceiptModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/public/js/auth.js"></script>
+  <script src="/public/js/layout.js"></script>
+  <script src="/public/js/stock-receipts.js"></script>
+</body>
+</html>

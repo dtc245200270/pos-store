@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Tồn Kho - POS Store</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .table th { font-weight: 600; font-size: 0.9rem; }
+    .card-header h5 { font-size: 1.05rem; }
+    .badge-stock { font-size: 0.9rem; padding: 0.35em 0.65em; }
+    .stat-card { transition: transform 0.15s ease-in-out; }
+    .stat-card:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container-fluid py-4 px-md-4">
+    <!-- Header trang -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
+      <div>
+        <h2 class="h3 mb-1 fw-bold text-dark">
+          <i class="bi bi-archive-fill me-2 text-primary"></i>Quản Lý & Tra Cứu Tồn Kho
+        </h2>
+        <p class="text-muted small mb-0">
+          Theo dõi số lượng tồn kho theo thời gian thực và lịch sử biến động kho cho từng sản phẩm
+        </p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span id="user-role-badge" class="badge bg-secondary">Đang tải vai trò...</span>
+        <button type="button" id="btn-refresh-inventory" class="btn btn-outline-primary btn-sm px-3 shadow-sm" onclick="loadInventory()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Làm mới dữ liệu
+        </button>
+      </div>
+    </div>
+
+    <!-- Thông báo lỗi tải toàn cục nếu có -->
+    <div id="inventory-error" class="alert alert-danger shadow-sm d-none mb-3" role="alert">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
+          <span id="inventory-error-text">Lỗi khi tải dữ liệu tồn kho.</span>
+        </div>
+        <button class="btn btn-sm btn-outline-danger" onclick="loadInventory()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Thử lại
+        </button>
+      </div>
+    </div>
+
+    <!-- Thẻ thống kê số lượng tồn kho -->
+    <div class="row g-3 mb-4">
+      <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm stat-card bg-white">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-3 bg-primary bg-opacity-10 p-3 text-primary me-3">
+              <i class="bi bi-boxes fs-3"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Tổng mặt hàng</div>
+              <div class="fs-4 fw-bold text-dark" id="stat-total">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm stat-card bg-white">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-3 bg-success bg-opacity-10 p-3 text-success me-3">
+              <i class="bi bi-check-circle-fill fs-3"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Còn hàng an toàn</div>
+              <div class="fs-4 fw-bold text-success" id="stat-safe">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm stat-card bg-white">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-3 bg-warning bg-opacity-10 p-3 text-warning me-3">
+              <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Sắp hết hàng</div>
+              <div class="fs-4 fw-bold text-warning" id="stat-low">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-3 col-sm-6">
+        <div class="card border-0 shadow-sm stat-card bg-white">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-3 bg-danger bg-opacity-10 p-3 text-danger me-3">
+              <i class="bi bi-x-circle-fill fs-3"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Hết hàng (Tồn = 0)</div>
+              <div class="fs-4 fw-bold text-danger" id="stat-out">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card danh sách tồn kho -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-header bg-white py-3 border-bottom">
+        <div class="row g-3 align-items-center">
+          <!-- Ô tìm kiếm -->
+          <div class="col-lg-5 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+              <input type="text" id="search-inventory" class="form-control border-start-0" placeholder="Tìm theo Mã SKU hoặc Tên sản phẩm...">
+            </div>
+          </div>
+
+          <!-- Lọc trạng thái tồn kho -->
+          <div class="col-lg-4 col-md-6">
+            <div class="input-group">
+              <label class="input-group-text bg-white" for="filter-stock-status"><i class="bi bi-funnel me-1"></i>Lọc tồn:</label>
+              <select id="filter-stock-status" class="form-select" onchange="loadInventory()">
+                <option value="all">Tất cả sản phẩm</option>
+                <option value="low_stock">⚠️ Sắp hết hàng (≤ ngưỡng)</option>
+                <option value="out_of_stock">❌ Đã hết hàng (Tồn = 0)</option>
+                <option value="in_stock">✅ Còn hàng an toàn (> ngưỡng)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cấu hình ngưỡng cảnh báo sắp hết hàng -->
+          <div class="col-lg-3 col-md-12">
+            <div class="input-group">
+              <span class="input-group-text bg-white" title="Ngưỡng cảnh báo sắp hết hàng"><i class="bi bi-sliders me-1"></i>Ngưỡng:</span>
+              <input type="number" id="low-stock-threshold" class="form-control" value="5" min="0" step="1" title="Số lượng tồn để phân loại là sắp hết hàng" onchange="onThresholdChange()">
+              <button class="btn btn-outline-secondary" type="button" onclick="loadInventory()" title="Áp dụng ngưỡng">Áp dụng</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thông báo minh bạch rõ ràng về ngưỡng cảnh báo được áp dụng -->
+        <div class="mt-2 text-muted small" id="threshold-banner">
+          <i class="bi bi-info-circle-fill text-info me-1"></i>
+          Quy tắc phân loại: Sản phẩm có số lượng tồn <strong>&gt; 0</strong> và <strong>&le; <span id="current-threshold-label" class="badge bg-warning text-dark">5</span></strong> sẽ được hệ thống xếp vào danh mục <em>Sắp hết hàng</em>.
+        </div>
+      </div>
+
+      <!-- Trạng thái đang tải -->
+      <div id="inventory-loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted mb-0">Đang tải dữ liệu tồn kho từ máy chủ...</p>
+      </div>
+
+      <!-- Bảng danh sách tồn kho -->
+      <div class="table-responsive d-none" id="inventory-table-container">
+        <table class="table table-hover align-middle mb-0" id="inventory-table">
+          <thead class="table-light border-bottom">
+            <tr>
+              <th class="text-center" style="width: 50px;">#</th>
+              <th style="width: 140px;">Mã SKU</th>
+              <th>Tên Sản Phẩm</th>
+              <th class="text-center" style="width: 100px;">Đơn Vị</th>
+              <th class="text-center" style="width: 150px;">Số Lượng Tồn</th>
+              <th class="text-center" style="width: 150px;">Trạng Thái KD</th>
+              <th class="text-center" style="width: 140px;" id="col-action-header">Lịch Sử Kho</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Trạng thái không có dữ liệu -->
+      <div id="inventory-empty" class="text-center py-5 d-none">
+        <i class="bi bi-box-seam fs-1 text-muted d-block mb-2"></i>
+        <h6 class="text-dark fw-bold">Không tìm thấy sản phẩm nào</h6>
+        <p class="text-muted small mb-0">Vui lòng thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh bộ lọc tồn kho.</p>
+      </div>
+
+      <div class="card-footer bg-light py-2 text-muted small d-flex justify-content-between align-items-center">
+        <span id="inventory-count-info">Hiển thị 0 sản phẩm</span>
+        <span class="text-muted"><i class="bi bi-shield-lock me-1"></i>Số lượng tồn kho được cập nhật tự động từ chứng từ; không cho phép sửa trực tiếp.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lịch Sử Biến Động Kho (Dành riêng cho Quản lý) -->
+  <div class="modal fade" id="history-modal" tabindex="-1" aria-labelledby="history-modal-title" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content shadow border-0">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title fw-bold" id="history-modal-title">
+            <i class="bi bi-clock-history me-2 text-info"></i>Lịch Sử Biến Động Kho
+          </h5>
+          <button type="button" class="btn-close btn-close-white" aria-label="Close" onclick="closeHistoryModal()"></button>
+        </div>
+
+        <div class="modal-body p-3 p-md-4">
+          <!-- Thông tin sản phẩm đang tra cứu -->
+          <div class="card bg-light border-0 p-3 mb-3" id="modal-product-summary">
+            <div class="row g-2">
+              <div class="col-sm-4">
+                <span class="text-muted small d-block">Mã SKU:</span>
+                <span class="fw-bold font-monospace text-primary" id="modal-sku">-</span>
+              </div>
+              <div class="col-sm-5">
+                <span class="text-muted small d-block">Tên sản phẩm:</span>
+                <span class="fw-bold text-dark" id="modal-name">-</span>
+              </div>
+              <div class="col-sm-3">
+                <span class="text-muted small d-block">Tồn kho hiện tại:</span>
+                <span class="fw-bold fs-5 text-danger" id="modal-stock">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trạng thái đang tải lịch sử -->
+          <div id="history-loading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted mb-0">Đang tải lịch sử biến động từ cơ sở dữ liệu...</p>
+          </div>
+
+          <!-- Lỗi tải lịch sử -->
+          <div id="history-error" class="alert alert-danger d-none" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="history-error-text">Không thể tải lịch sử biến động kho.</span>
+          </div>
+
+          <!-- Bảng lịch sử biến động -->
+          <div class="table-responsive d-none" id="history-table-container">
+            <table class="table table-hover align-middle mb-0" id="history-table">
+              <thead class="table-light border-bottom">
+                <tr>
+                  <th class="text-center" style="width: 50px;">#</th>
+                  <th style="width: 170px;">Thời Gian (Giờ VN)</th>
+                  <th class="text-center" style="width: 110px;">Loại</th>
+                  <th style="width: 150px;">Mã Chứng Từ</th>
+                  <th>Người Thực Hiện</th>
+                  <th class="text-end" style="width: 120px;">Biến Động</th>
+                  <th class="text-end" style="width: 110px;">Tồn Sau</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Trạng thái chưa có biến động -->
+          <div id="history-empty" class="text-center py-4 d-none">
+            <i class="bi bi-calendar-x fs-2 text-muted d-block mb-1"></i>
+            <p class="text-muted mb-0">Sản phẩm này chưa phát sinh biến động kho nào.</p>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light justify-content-between">
+          <div class="small text-muted">
+            <i class="bi bi-info-circle me-1"></i> Biến động tự động ghi nhận theo thời gian thực (Giờ Việt Nam: UTC+7).
+          </div>
+          <button type="button" class="btn btn-secondary px-4" onclick="closeHistoryModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/public/js/auth.js"></script>
+  <script src="/public/js/layout.js"></script>
+  <script src="/public/js/inventory.js"></script>
+</body>
+</html>

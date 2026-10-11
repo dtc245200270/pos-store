@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tài Khoản Của Tôi - POS Store</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <h2 class="mb-4 fw-bold"><i class="bi bi-person-circle me-2 text-primary"></i>Tài Khoản Của Tôi</h2>
+
+        <!-- Khối 1: Thông tin tài khoản -->
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <span class="fw-semibold"><i class="bi bi-person-badge me-2"></i>Thông Tin Tài Khoản</span>
+            <span id="profile-role-badge"><span class="badge bg-secondary">Đang tải...</span></span>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="text-muted small fw-semibold">Tên đăng nhập</label>
+                <div class="form-control bg-light fw-bold" id="profile-username">...</div>
+                <small class="text-muted">Tên đăng nhập không thể chỉnh sửa</small>
+              </div>
+              <div class="col-sm-6">
+                <label class="text-muted small fw-semibold">Họ và tên</label>
+                <div class="form-control bg-light" id="profile-fullname">...</div>
+              </div>
+              <div class="col-sm-6">
+                <label class="text-muted small fw-semibold">Vai trò hệ thống</label>
+                <div class="form-control bg-light" id="profile-role-text">...</div>
+                <small class="text-muted">Vai trò do quản trị viên phân quyền</small>
+              </div>
+              <div class="col-sm-6">
+                <label class="text-muted small fw-semibold">Trạng thái tài khoản</label>
+                <div class="form-control bg-light" id="profile-status"><span class="badge bg-success">Hoạt động</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Khối 2: Đổi Mật Khẩu -->
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-shield-lock me-2"></i>Đổi Mật Khẩu</h5>
+          </div>
+          <div class="card-body p-4">
+            <div id="cp-error" class="alert alert-danger d-none mb-3"></div>
+            <div id="cp-success" class="alert alert-success d-none mb-3"></div>
+
+            <form id="change-password-form">
+              <div class="mb-3">
+                <label for="current_password" class="form-label fw-semibold">
+                  Mật khẩu hiện tại <span class="text-danger">*</span>
+                </label>
+                <input type="password" class="form-control" id="current_password" name="current_password" required autocomplete="current-password" placeholder="Nhập mật khẩu đang sử dụng">
+              </div>
+
+              <div class="mb-3">
+                <label for="new_password" class="form-label fw-semibold">
+                  Mật khẩu mới <span class="text-danger">*</span>
+                </label>
+                <input type="password" class="form-control" id="new_password" name="new_password" required autocomplete="new-password" placeholder="Tối thiểu 8 ký tự">
+                <small class="text-muted">Mật khẩu mới phải khác mật khẩu hiện tại và có ít nhất 8 ký tự.</small>
+              </div>
+
+              <div class="mb-4">
+                <label for="confirm_password" class="form-label fw-semibold">
+                  Xác nhận mật khẩu mới <span class="text-danger">*</span>
+                </label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required autocomplete="new-password" placeholder="Nhập lại mật khẩu mới">
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <button type="button" class="btn btn-outline-danger" onclick="logout()">
+                  <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
+                </button>
+                <button type="submit" class="btn btn-primary px-4" id="btn-submit-change-pass">
+                  <i class="bi bi-check2-circle me-1"></i>Đổi Mật Khẩu
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="/public/js/auth.js"></script>
+  <script src="/public/js/layout.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Tải thông tin người dùng từ /api/auth/me
+      try {
+        const res = await window.apiFetch('/api/auth/me');
+        if (res && res.ok) {
+          const user = await res.json();
+          document.getElementById('profile-fullname').textContent = user.fullName || user.username || '';
+          document.getElementById('profile-username').textContent = user.username || '';
+          
+          const roleLabel = user.role === 'MANAGER' ? 'Quản lý' : 'Thu ngân';
+          const badgeClass = user.role === 'MANAGER' ? 'bg-primary' : 'bg-success';
+          
+          document.getElementById('profile-role-badge').innerHTML = `<span class="badge ${badgeClass}">${roleLabel}</span>`;
+          document.getElementById('profile-role-text').textContent = roleLabel;
+        }
+      } catch (e) {
+        console.error('Lỗi tải thông tin tài khoản:', e);
+      }
+
+      // 2. Xử lý form Đổi Mật Khẩu
+      const form = document.getElementById('change-password-form');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const curPass = document.getElementById('current_password').value;
+        const newPass = document.getElementById('new_password').value;
+        const confirmPass = document.getElementById('confirm_password').value;
+
+        const errDiv = document.getElementById('cp-error');
+        const succDiv = document.getElementById('cp-success');
+        const btn = document.getElementById('btn-submit-change-pass');
+
+        errDiv.classList.add('d-none');
+        succDiv.classList.add('d-none');
+        errDiv.textContent = '';
+        succDiv.textContent = '';
+
+        // Kiểm tra cơ bản phía client
+        if (!curPass || !newPass || !confirmPass) {
+          errDiv.textContent = 'Vui lòng nhập đầy đủ các trường mật khẩu.';
+          errDiv.classList.remove('d-none');
+          return;
+        }
+
+        if (newPass.length < 8) {
+          errDiv.textContent = 'Mật khẩu mới phải có ít nhất 8 ký tự.';
+          errDiv.classList.remove('d-none');
+          return;
+        }
+
+        if (newPass !== confirmPass) {
+          errDiv.textContent = 'Xác nhận mật khẩu mới không khớp.';
+          errDiv.classList.remove('d-none');
+          return;
+        }
+
+        if (curPass === newPass) {
+          errDiv.textContent = 'Mật khẩu mới không được trùng với mật khẩu hiện tại.';
+          errDiv.classList.remove('d-none');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Đang xử lý...';
+
+        try {
+          const res = await window.apiFetch('/api/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({
+              current_password: curPass,
+              new_password: newPass,
+              confirm_password: confirmPass
+            })
+          });
+
+          const data = await res.json();
+
+          if (res && res.ok) {
+            succDiv.textContent = data.message || 'Đổi mật khẩu thành công. Đang chuyển hướng đến trang đăng nhập...';
+            succDiv.classList.remove('d-none');
+            form.reset();
+
+            // Xóa localStorage và chuyển về login sau 1.5 giây
+            setTimeout(() => {
+              localStorage.clear();
+              window.location.href = '/login';
+            }, 1500);
+          } else {
+            errDiv.textContent = data.error || 'Đổi mật khẩu thất bại.';
+            errDiv.classList.remove('d-none');
+          }
+        } catch (err) {
+          errDiv.textContent = 'Lỗi kết nối máy chủ.';
+          errDiv.classList.remove('d-none');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Đổi Mật Khẩu';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
