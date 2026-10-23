@@ -34,8 +34,9 @@ test('Dashboard Stats Comprehensive Tests', async (t) => {
 
       const schemaSql = require('fs').readFileSync('database/schema.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_dashboard_test');
       const sessionSql = require('fs').readFileSync('database/migration_01_sessions.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_dashboard_test');
+      const mig02Sql = require('fs').readFileSync('database/migration_02_payment_methods.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_dashboard_test');
 
-      const parts = [...schemaSql.split(';'), ...sessionSql.split(';')].map(s => s.trim()).filter(s => s.length > 0);
+      const parts = [...schemaSql.split(';'), ...sessionSql.split(';'), ...mig02Sql.split(';')].map(s => s.trim()).filter(s => s.length > 0);
       const conn = await rootPool.getConnection();
       try {
         await conn.query('USE pos_store_dashboard_test');
@@ -83,7 +84,7 @@ test('Dashboard Stats Comprehensive Tests', async (t) => {
 
     return new Promise((resolve) => {
       serverProcess = spawn('node', ['server.js'], {
-        env: { ...process.env, DB_NAME: 'pos_store_dashboard_test', SESSION_SECRET: 'test_dash_secret', PORT: '3005' }
+        env: { ...process.env, DB_NAME: 'pos_store_dashboard_test', SESSION_SECRET: 'test_dash_secret', PORT: '3005', METRICS_PORT: '0' }
       });
       serverProcess.stdout.on('data', (data) => {
         if (data.toString().includes('Website đang chạy')) {

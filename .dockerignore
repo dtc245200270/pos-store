@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+.env.*
+!**/.env.example
+cookies.txt
+*.zip
+logs/*
+!logs/.gitkeep
+deploy/monitoring/artifacts
+deploy/logging/artifacts
+scratch/
+coverage
+.DS_Store
+pos-store-error.log

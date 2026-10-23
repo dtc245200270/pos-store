@@ -1,0 +1,972 @@
+/* ==========================================================================
+   POS STORE - DESIGN SYSTEM & ADMIN UI STYLES
+   Bảng màu chủ đạo:
+   - Sidebar: #1E293B
+   - Content Background: #F5F7FB
+   - Card/Surface: #FFFFFF
+   - Primary: #2563EB (Hover: #1D4ED8)
+   - Text Primary: #0F172A, Text Secondary: #64748B
+   - Border: #E2E8F0
+   - Semantic: Error/Hết hàng: #EF4444, Warning: #F59E0B, Success: #10B981
+   ========================================================================== */
+
+:root {
+  --pos-primary: #2563EB;
+  --pos-primary-hover: #1D4ED8;
+  --pos-primary-light: #EFF6FF;
+  --pos-sidebar-bg: #1E293B;
+  --pos-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --pos-sidebar-active: #2563EB;
+  --pos-sidebar-text: #94A3B8;
+  --pos-sidebar-text-hover: #FFFFFF;
+  --pos-body-bg: #F5F7FB;
+  --pos-card-bg: #FFFFFF;
+  --pos-text-main: #0F172A;
+  --pos-text-muted: #64748B;
+  --pos-border: #E2E8F0;
+  --pos-border-light: #F1F5F9;
+  --pos-success: #10B981;
+  --pos-warning: #F59E0B;
+  --pos-danger: #EF4444;
+  --pos-radius: 8px;
+  --pos-radius-lg: 12px;
+  --pos-shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --pos-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.08);
+  --pos-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  --pos-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Base Reset & Typography */
+html, body {
+  background-color: var(--pos-body-bg) !important;
+  font-family: var(--pos-font-family);
+  color: var(--pos-text-main);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--pos-text-main);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-title {
+  font-size: 1.625rem; /* 26px */
+  font-weight: 700;
+  color: var(--pos-text-main);
+  margin-bottom: 0.25rem;
+}
+
+.page-subtitle {
+  font-size: 0.875rem; /* 14px */
+  color: var(--pos-text-muted);
+  margin-bottom: 0;
+}
+
+/* Layout Content Wrapper */
+.pos-main-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-content-container {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+@media (max-width: 767.98px) {
+  .pos-content-container {
+    padding: 1rem 0.75rem;
+  }
+}
+
+/* Topbar */
+.pos-topbar {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--pos-border);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+.pos-topbar-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--pos-text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Forms & Inputs: Chiều cao chuẩn 40-44px */
+.form-control,
+.form-select {
+  height: 42px;
+  border-radius: var(--pos-radius);
+  border: 1px solid var(--pos-border);
+  color: var(--pos-text-main);
+  font-size: 0.875rem;
+  padding: 0.5rem 0.875rem;
+  background-color: #FFFFFF;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--pos-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: 0;
+}
+
+.form-control::placeholder {
+  color: #94A3B8;
+  font-size: 0.875rem;
+}
+
+.form-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+
+.input-group-text {
+  border-color: var(--pos-border);
+  background-color: #F8FAFC;
+  color: var(--pos-text-muted);
+  border-radius: var(--pos-radius);
+}
+
+.form-control-sm,
+.form-select-sm {
+  height: 36px;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.65rem;
+}
+
+/* Buttons: Chiều cao chuẩn 40-44px cho regular */
+.btn {
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--pos-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  border-width: 1px;
+}
+
+.btn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.btn-primary {
+  background-color: var(--pos-primary);
+  border-color: var(--pos-primary);
+  color: #FFFFFF;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--pos-primary-hover);
+  border-color: var(--pos-primary-hover);
+  color: #FFFFFF;
+}
+
+.btn-outline-primary {
+  color: var(--pos-primary);
+  border-color: var(--pos-primary);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--pos-primary);
+  border-color: var(--pos-primary);
+  color: #FFFFFF;
+}
+
+.btn-sm {
+  height: 34px;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.75rem;
+}
+
+.btn-lg {
+  height: 48px;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+}
+
+/* Cards & Surfaces */
+.card {
+  background-color: var(--pos-card-bg);
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius-lg);
+  box-shadow: var(--pos-shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  background-color: #FFFFFF;
+  border-bottom: 1px solid var(--pos-border);
+  padding: 1rem 1.25rem;
+  border-top-left-radius: var(--pos-radius-lg) !important;
+  border-top-right-radius: var(--pos-radius-lg) !important;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.card-footer {
+  background-color: #F8FAFC;
+  border-top: 1px solid var(--pos-border);
+  padding: 0.875rem 1.25rem;
+  border-bottom-left-radius: var(--pos-radius-lg) !important;
+  border-bottom-right-radius: var(--pos-radius-lg) !important;
+}
+
+/* Data Tables */
+.table-responsive {
+  border-radius: var(--pos-radius);
+  overflow-x: auto;
+}
+
+.table {
+  color: var(--pos-text-main);
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.table thead th {
+  background-color: #F8FAFC;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--pos-border);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--pos-border-light);
+  color: #1E293B;
+}
+
+.table tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Badges */
+.badge {
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.badge-success, .badge.bg-success {
+  background-color: #DCFCE7 !important;
+  color: #166534 !important;
+  border: 1px solid #BBF7D0;
+}
+
+.badge-warning, .badge.bg-warning {
+  background-color: #FEF3C7 !important;
+  color: #92400E !important;
+  border: 1px solid #FDE68A;
+}
+
+.badge-danger, .badge.bg-danger {
+  background-color: #FEE2E2 !important;
+  color: #991B1B !important;
+  border: 1px solid #FECACA;
+}
+
+.badge-primary, .badge.bg-primary {
+  background-color: #DBEAFE !important;
+  color: #1E40AF !important;
+  border: 1px solid #BFDBFE;
+}
+
+.badge-secondary, .badge.bg-secondary {
+  background-color: #F1F5F9 !important;
+  color: #475569 !important;
+  border: 1px solid #E2E8F0;
+}
+
+.badge-info, .badge.bg-info {
+  background-color: #E0F2FE !important;
+  color: #0369A1 !important;
+  border: 1px solid #BAE6FD;
+}
+
+/* Stat Cards (Tổng quan) */
+.stat-card-modern {
+  background: #FFFFFF;
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  height: 100%;
+}
+
+.stat-card-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--pos-shadow-md);
+}
+
+.stat-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.stat-icon-primary {
+  background-color: #EFF6FF;
+  color: #2563EB;
+}
+
+.stat-icon-success {
+  background-color: #ECFDF5;
+  color: #10B981;
+}
+
+.stat-icon-warning {
+  background-color: #FFFBEB;
+  color: #F59E0B;
+}
+
+.stat-icon-info {
+  background-color: #F0F9FF;
+  color: #0284C7;
+}
+
+.stat-value {
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--pos-text-main);
+}
+
+.stat-label {
+  font-size: 0.8125rem;
+  color: var(--pos-text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Modals */
+.modal-content {
+  border-radius: var(--pos-radius-lg);
+  border: 1px solid var(--pos-border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--pos-border);
+  padding: 1rem 1.5rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--pos-border);
+  background-color: #F8FAFC;
+  padding: 0.875rem 1.5rem;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  box-shadow: var(--pos-shadow-md);
+  padding: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.dropdown-item {
+  border-radius: 6px;
+  padding: 0.5rem 0.875rem;
+  color: var(--pos-text-main);
+  transition: background-color 0.15s ease;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+  background-color: #F1F5F9;
+  color: var(--pos-primary);
+}
+
+.dropdown-item.text-danger:hover {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+/* Utilities */
+.text-money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--pos-text-main);
+}
+
+/* Dashboard Header Styles */
+.dashboard-header-title {
+  font-size: 26px !important;
+  font-weight: 600 !important;
+  color: var(--pos-text-main);
+  line-height: 1.3;
+}
+
+.dashboard-header-desc {
+  font-size: 14px;
+  color: var(--pos-text-muted);
+  margin-bottom: 0;
+}
+
+.dashboard-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-date-display {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 14px;
+  background-color: #FFFFFF;
+  border: 1px solid var(--pos-border);
+  border-radius: var(--pos-radius);
+  font-size: 14px;
+  font-weight: 400;
+  color: #334155;
+  box-shadow: none;
+  white-space: nowrap;
+}
+
+.dashboard-refresh-btn {
+  height: 40px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: var(--pos-radius) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-refresh-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.spin-animation {
+  display: inline-block;
+  animation: spin-clockwise 0.8s linear infinite;
+}
+
+@keyframes spin-clockwise {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .dashboard-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ==========================================================================
+   BỐ CỤC KHUNG GIAO DIỆN (SIDEBAR, TOPBAR, CASHIER NAVBAR)
+   - Tải trong <head> trước khi trang render để tránh FOUC / chớp trắng
+   - Mặc định KHÔNG dùng transition trên khung trang để giữ vị trí tuyệt đối ổn định
+   - Chỉ bật transition khi người dùng bấm nút thu gọn / mở rộng
+   ========================================================================== */
+
+/* --- Layout Quản lý: Sidebar bên trái #1E293B --- */
+body.pos-manager-layout {
+  padding-left: 260px !important;
+  padding-top: 60px !important;
+  background-color: var(--pos-body-bg) !important;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Khi sidebar thu gọn */
+html.sidebar-collapsed body.pos-manager-layout,
+body.pos-manager-layout.sidebar-collapsed {
+  padding-left: 78px !important;
+}
+
+/* Chỉ bật transition khi người dùng thao tác bấm nút thu gọn/mở rộng */
+body.sidebar-transitioning {
+  transition: padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+body.sidebar-transitioning .pos-manager-sidebar {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s ease !important;
+}
+body.sidebar-transitioning .pos-topbar-wrapper {
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Sidebar Container */
+.pos-manager-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  background-color: #1E293B;
+  color: #F8FAFC;
+  display: flex;
+  flex-direction: column;
+  z-index: 1045;
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.12);
+  box-sizing: border-box;
+  overflow-x: hidden !important;
+}
+html.sidebar-collapsed .pos-manager-sidebar,
+body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar {
+  width: 78px !important;
+}
+
+/* Brand Header */
+.pos-sidebar-brand {
+  padding: 0 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #0F172A;
+  height: 60px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.pos-sidebar-brand .brand-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+html.sidebar-collapsed .pos-sidebar-brand,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-brand {
+  justify-content: center !important;
+  padding: 0 0.5rem !important;
+}
+html.sidebar-collapsed .pos-sidebar-brand .brand-title,
+html.sidebar-collapsed .pos-sidebar-brand .brand-badge,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-brand .brand-title,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-brand .brand-badge {
+  display: none !important;
+}
+
+/* Nav Scroll Area */
+.pos-sidebar-nav-container {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden !important;
+  padding: 0.5rem 0.25rem;
+  box-sizing: border-box;
+}
+
+/* Group Heading */
+.pos-sidebar-group-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748B;
+  padding: 0.85rem 0.85rem 0.35rem;
+  white-space: nowrap;
+}
+/* Khi thu gọn: ẩn chữ và thay tên nhóm bằng đường phân cách nhẹ */
+html.sidebar-collapsed .pos-sidebar-group-title,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-group-title {
+  display: block !important;
+  height: 1px !important;
+  margin: 10px 14px !important;
+  padding: 0 !important;
+  border: none !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  overflow: hidden !important;
+  text-indent: -9999px !important;
+}
+html.sidebar-collapsed .pos-sidebar-group-title:first-child,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-group-title:first-child {
+  margin-top: 4px !important;
+  background-color: transparent !important;
+}
+
+/* Navigation Links */
+.pos-manager-sidebar .nav-link {
+  color: #94A3B8;
+  border-radius: 8px;
+  padding: 0.625rem 0.875rem;
+  margin: 0.15rem 0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.pos-manager-sidebar .nav-link i {
+  font-size: 1.15rem;
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.pos-manager-sidebar .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+/* Trạng thái active có nền xanh #0d6efd và chữ đậm */
+.pos-manager-sidebar .nav-link.active {
+  background-color: #0d6efd !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+html.sidebar-collapsed .pos-manager-sidebar .nav-link,
+body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar .nav-link {
+  width: 44px !important;
+  height: 44px !important;
+  padding: 0 !important;
+  margin: 4px auto !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  border-radius: 8px !important;
+}
+html.sidebar-collapsed .pos-manager-sidebar .nav-link i,
+body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar .nav-link i {
+  margin: 0 !important;
+  font-size: 1.25rem !important;
+  text-align: center !important;
+}
+html.sidebar-collapsed .pos-manager-sidebar .nav-link span,
+body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar .nav-link span {
+  display: none !important;
+}
+
+/* Sidebar Footer */
+.pos-sidebar-footer {
+  flex-shrink: 0;
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #0F172A;
+  box-sizing: border-box;
+  overflow: hidden !important;
+}
+.pos-sidebar-footer-expanded {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+.pos-sidebar-footer-expanded .btn {
+  flex: 1;
+  height: 38px;
+  padding: 0 0.5rem;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+.pos-sidebar-footer-collapsed {
+  display: none !important;
+}
+html.sidebar-collapsed .pos-sidebar-footer,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-footer {
+  padding: 12px 6px !important;
+}
+html.sidebar-collapsed .pos-sidebar-footer-expanded,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-footer-expanded {
+  display: none !important;
+}
+html.sidebar-collapsed .pos-sidebar-footer-collapsed,
+body.pos-manager-layout.sidebar-collapsed .pos-sidebar-footer-collapsed {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+.pos-footer-icon-btn {
+  width: 42px !important;
+  height: 42px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  font-size: 1.15rem !important;
+  box-sizing: border-box !important;
+  margin: 0 auto !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease !important;
+}
+
+/* Topbar Quản lý */
+.pos-topbar-wrapper {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 260px;
+  height: 60px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 1040;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+}
+html.sidebar-collapsed .pos-topbar-wrapper,
+body.pos-manager-layout.sidebar-collapsed .pos-topbar-wrapper {
+  left: 78px !important;
+}
+.pos-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.pos-topbar-page-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+/* User Profile Dropdown */
+.pos-user-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: transparent;
+  border: 1px solid #E2E8F0;
+  border-radius: 30px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  color: #0F172A;
+  font-size: 0.875rem;
+  transition: background-color 0.15s ease;
+}
+.pos-user-dropdown-btn:hover {
+  background-color: #F8FAFC;
+}
+.pos-user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #2563EB;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+/* Mobile & Offcanvas Backdrop */
+.pos-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.5);
+  z-index: 1044;
+}
+.pos-sidebar-backdrop.show {
+  display: block;
+}
+
+/* Responsive Tablet & Mobile */
+@media (max-width: 991.98px) {
+  body.pos-manager-layout,
+  html.sidebar-collapsed body.pos-manager-layout,
+  body.pos-manager-layout.sidebar-collapsed {
+    padding-left: 0 !important;
+    padding-top: 56px !important;
+  }
+  .pos-manager-sidebar,
+  html.sidebar-collapsed .pos-manager-sidebar,
+  body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar {
+    transform: translateX(-100%);
+    width: 280px !important;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1050;
+    transition: transform 0.25s ease !important;
+  }
+  .pos-manager-sidebar.show,
+  html.sidebar-collapsed .pos-manager-sidebar.show,
+  body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar.show {
+    transform: translateX(0) !important;
+  }
+  .pos-topbar-wrapper,
+  html.sidebar-collapsed .pos-topbar-wrapper,
+  body.pos-manager-layout.sidebar-collapsed .pos-topbar-wrapper {
+    left: 0 !important;
+    height: 56px;
+    padding: 0 1rem;
+  }
+  .btn-sidebar-collapse {
+    display: none !important;
+  }
+  html.sidebar-collapsed .pos-sidebar-brand,
+  body.pos-manager-layout.sidebar-collapsed .pos-sidebar-brand {
+    justify-content: space-between !important;
+    padding: 0 1.25rem !important;
+  }
+  html.sidebar-collapsed .pos-sidebar-brand .brand-title,
+  html.sidebar-collapsed .pos-sidebar-brand .brand-badge,
+  body.pos-manager-layout.sidebar-collapsed .pos-sidebar-brand .brand-title,
+  body.pos-manager-layout.sidebar-collapsed .pos-sidebar-brand .brand-badge {
+    display: inline !important;
+  }
+  html.sidebar-collapsed .pos-sidebar-group-title,
+  body.pos-manager-layout.sidebar-collapsed .pos-sidebar-group-title {
+    display: block !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0.85rem 0.85rem 0.35rem !important;
+    font-size: 0.6875rem !important;
+    line-height: normal !important;
+    color: #64748B !important;
+    text-indent: 0 !important;
+    background-color: transparent !important;
+  }
+  html.sidebar-collapsed .pos-manager-sidebar .nav-link,
+  body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar .nav-link {
+    width: auto !important;
+    height: auto !important;
+    padding: 0.625rem 0.875rem !important;
+    margin: 0.15rem 0 !important;
+    justify-content: flex-start !important;
+  }
+  html.sidebar-collapsed .pos-manager-sidebar .nav-link span,
+  body.pos-manager-layout.sidebar-collapsed .pos-manager-sidebar .nav-link span {
+    display: inline !important;
+  }
+  html.sidebar-collapsed .pos-sidebar-footer,
+  body.pos-manager-layout.sidebar-collapsed .pos-sidebar-footer {
+    padding: 12px !important;
+  }
+  html.sidebar-collapsed .pos-sidebar-footer-expanded,
+  body.pos-manager-layout.sidebar-collapsed .pos-sidebar-footer-expanded {
+    display: flex !important;
+  }
+  html.sidebar-collapsed .pos-sidebar-footer-collapsed,
+  body.pos-manager-layout.sidebar-collapsed .pos-sidebar-footer-collapsed {
+    display: none !important;
+  }
+}
+
+/* --- Layout Thu ngân: Menu trên cùng --- */
+body.pos-cashier-layout {
+  padding-left: 0 !important;
+  padding-top: 0 !important;
+  background-color: var(--pos-body-bg) !important;
+}
+.pos-cashier-nav {
+  background-color: #1E293B !important;
+  min-height: 52px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.pos-cashier-nav .nav-link {
+  color: #CBD5E1;
+  padding: 0.45rem 0.85rem !important;
+  border-radius: 6px;
+  margin-right: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.pos-cashier-nav .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+.pos-cashier-nav .nav-link.active {
+  background-color: #0d6efd !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+}
+
+/* Print Clean Stylesheet */
+@media print {
+  body.pos-manager-layout,
+  body.pos-cashier-layout {
+    padding-left: 0 !important;
+    padding-top: 0 !important;
+    margin: 0 !important;
+    background: #FFFFFF !important;
+  }
+
+  .pos-manager-sidebar,
+  .pos-manager-mobile-bar,
+  .pos-cashier-nav,
+  .pos-topbar-wrapper,
+  .pos-sidebar-backdrop,
+  .pos-topbar,
+  .no-print {
+    display: none !important;
+  }
+}

@@ -5,11 +5,12 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test tests/integration.test.js tests/products.test.js tests/stock-receipts.test.js tests/inventory.test.js tests/dashboard.test.js",
+    "test": "node --test tests/integration.test.js tests/products.test.js tests/stock-receipts.test.js tests/inventory.test.js tests/dashboard.test.js tests/vietqr-payment.test.js",
     "test:products": "node --test tests/products.test.js",
     "test:receipts": "node --test tests/stock-receipts.test.js",
     "test:inventory": "node --test tests/inventory.test.js",
-    "test:dashboard": "node --test tests/dashboard.test.js"
+    "test:dashboard": "node --test tests/dashboard.test.js",
+    "test:vietqr": "node --test tests/vietqr-payment.test.js"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +23,7 @@
     "express": "^5.3.0",
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.19.0",
-    "mysql2": "^3.24.5"
+    "mysql2": "^3.24.5",
+    "prom-client": "^15.1.3"
   }
 }

@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const http = require("http");
 const express = require("express");
 const session = require("express-session");
 const pool = require("./config/db");
@@ -13,14 +14,26 @@ const invoiceRoutes = require("./routes/api/invoices");
 const inventoryRoutes = require("./routes/api/inventory");
 const dashboardRoutes = require("./routes/api/dashboard");
 const { csrfProtection } = require("./middleware/auth");
+const requestIdMiddleware = require("./middleware/request-id");
+const httpLoggerMiddleware = require("./middleware/http-logger");
+const { metricsMiddleware, startMetricsServer } = require("./config/metrics");
+const logger = require("./config/logger");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+const HOST = process.env.HOST || "0.0.0.0";
+const METRICS_PORT = process.env.METRICS_PORT !== undefined ? Number(process.env.METRICS_PORT) : 9101;
+const METRICS_HOST = process.env.METRICS_HOST || "0.0.0.0";
 
 if (!process.env.SESSION_SECRET) {
   console.error("Lỗi: Bắt buộc phải có SESSION_SECRET trong file .env");
   process.exit(1);
 }
+
+// 1. Cấp requestId và khởi động theo dõi HTTP request trước body-parsers và routes
+app.use(requestIdMiddleware);
+app.use(httpLoggerMiddleware);
+app.use(metricsMiddleware);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -65,6 +78,41 @@ app.use('/api/inventory', csrfProtection, inventoryRoutes);
 app.use('/api/dashboard', csrfProtection, dashboardRoutes);
 app.use('/', pageRoutes);
 
+// Middleware xử lý lỗi tập trung
+app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+  const statusCode = err.status || err.statusCode || 500;
+  if (statusCode >= 500) {
+    return logger.sendServerError(res, req, 'unhandled_error', err);
+  }
+
+  // Xử lý các lỗi phân tích cú pháp (Parser errors) bằng thông báo an toàn, không rò rỉ nội dung body hoặc err.message
+  if (err instanceof SyntaxError && statusCode === 400 && ('body' in err || err.type === 'entity.parse.failed')) {
+    return res.status(400).json({
+      error: 'Dữ liệu JSON không hợp lệ'
+    });
+  }
+
+  if (err.type === 'entity.too.large') {
+    return res.status(statusCode).json({
+      error: 'Kích thước dữ liệu gửi lên vượt quá giới hạn'
+    });
+  }
+
+  if (err.type === 'encoding.unsupported' || err.type === 'charset.unsupported') {
+    return res.status(statusCode).json({
+      error: 'Định dạng mã hóa không được hỗ trợ'
+    });
+  }
+
+  // Giữ thông báo nghiệp vụ hiện có trong routes
+  return res.status(statusCode).json({
+    error: err.message || 'Yêu cầu không hợp lệ'
+  });
+});
+
 async function startServer() {
   try {
     const [rows] = await pool.query("SELECT DATABASE() AS database_name");
@@ -72,16 +120,56 @@ async function startServer() {
 
     console.log(`Kết nối MySQL thành công: ${rows[0].database_name}`);
 
-    const server = app.listen(PORT, "127.0.0.1", () => {
-      console.log(`Website đang chạy tại http://localhost:${PORT}`);
-    });
+    // Khởi động HTTP server riêng phục vụ Prometheus scrape tại 127.0.0.1:9101
+    let metricsServer;
+    try {
+      metricsServer = await startMetricsServer(METRICS_PORT, METRICS_HOST);
+      const actualMetricsPort = metricsServer.address().port;
+      console.log(`Metrics server đang chạy tại http://${METRICS_HOST}:${actualMetricsPort}/metrics`);
+      logger.info({
+        event: 'metrics_server_started',
+        host: METRICS_HOST,
+        port: actualMetricsPort,
+        requestedPort: METRICS_PORT
+      });
+    } catch (metricsError) {
+      logger.error({
+        event: 'metrics_server_startup_error',
+        errorCode: metricsError.code || 'METRICS_STARTUP_ERROR',
+        errorType: metricsError.name || 'Error',
+        port: METRICS_PORT,
+        host: METRICS_HOST
+      });
+      console.error(`[LỖI] Không thể khởi động Metrics server tại ${METRICS_HOST}:${METRICS_PORT} (${metricsError.code || metricsError.message})`);
+      await pool.end();
+      process.exit(1);
+    }
+
+    const server = http.createServer(app);
 
     server.on("error", (error) => {
-      console.error("Lỗi khởi động máy chủ:", error.code);
+      logger.error({
+        event: 'server_startup_error',
+        errorCode: error.code || 'STARTUP_ERROR',
+        errorType: error.name || 'Error'
+      });
       process.exit(1);
     });
+
+    server.listen(PORT, HOST, () => {
+      console.log(`Website đang chạy tại http://${HOST}:${PORT}`);
+      logger.info({
+        event: 'server_started',
+        port: PORT,
+        database: rows[0].database_name
+      });
+    });
   } catch (error) {
-    console.error("Không thể kết nối hoặc truy vấn MySQL:", error.code);
+    logger.error({
+      event: 'database_connection_error',
+      errorCode: error.code || 'DB_ERROR',
+      errorType: error.name || 'Error'
+    });
     await pool.end();
     process.exit(1);
   }

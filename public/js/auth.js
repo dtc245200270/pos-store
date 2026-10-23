@@ -14,6 +14,14 @@ async function fetchCsrfToken(forceRefresh = false) {
   }
 }
 
+function formatApiError(data, defaultMsg = 'Đã có lỗi xảy ra') {
+  if (data && data.requestId) {
+    return `Không thể thực hiện thao tác. Mã tra cứu: ${data.requestId}`;
+  }
+  return (data && (data.error || data.message)) || defaultMsg;
+}
+window.formatApiError = formatApiError;
+
 async function apiFetch(url, options = {}) {
   let token = await fetchCsrfToken();
   const headers = new Headers(options.headers || {});

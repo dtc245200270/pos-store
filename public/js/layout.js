@@ -1,236 +1,236 @@
 // Render phân tách layout theo vai trò: MANAGER (Sidebar bên trái) & CASHIER (Menu gọn phía trên)
-document.addEventListener('DOMContentLoaded', async () => {
-  // Đảm bảo icon Bootstrap được tải nếu trang chưa có
-  if (!document.querySelector('link[href*="bootstrap-icons"]')) {
-    const iconLink = document.createElement('link');
-    iconLink.rel = 'stylesheet';
-    iconLink.href = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css';
-    document.head.appendChild(iconLink);
+// Đảm bảo không có hiệu ứng giật khung, nháy sáng hay chớp trắng khi chuyển trang
+// Mục menu active sử dụng màu nền #0d6efd (định nghĩa trong /public/css/style.css)
+
+function getSafeLocalStorage(key) {
+  try {
+    return window.localStorage ? localStorage.getItem(key) : null;
+  } catch (e) {
+    return null;
   }
+}
 
-  // Gọi API xác thực người dùng
-  const res = await window.apiFetch('/api/auth/me', { method: 'GET' });
-  if (!res || !res.ok) return;
+function setSafeLocalStorage(key, val) {
+  try {
+    if (window.localStorage) localStorage.setItem(key, val);
+  } catch (e) {}
+}
 
-  const user = await res.json();
-  const role = user.role;
-  const name = user.fullName || user.username || 'Người dùng';
-  const roleLabel = role === 'MANAGER' ? 'Quản lý' : (role === 'CASHIER' ? 'Thu ngân' : role);
-
-  // Đường dẫn hiện tại (chuẩn hóa)
+function renderLayoutSync() {
   const currentPath = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
 
-  // Xóa navbar/sidebar cũ nếu có
-  const oldNav = document.querySelector('nav.navbar');
-  if (oldNav) oldNav.remove();
-  const oldSidebar = document.querySelector('.pos-manager-sidebar');
-  if (oldSidebar) oldSidebar.remove();
-  const oldMobileBar = document.querySelector('.pos-manager-mobile-bar');
-  if (oldMobileBar) oldMobileBar.remove();
-
-  // Inject CSS cho cả hai layout
-  let styleEl = document.getElementById('pos-layout-styles');
-  if (!styleEl) {
-    styleEl = document.createElement('style');
-    styleEl.id = 'pos-layout-styles';
-    styleEl.textContent = `
-      /* --- Layout Quản lý: Sidebar bên trái --- */
-      body.pos-manager-layout {
-        padding-left: 260px !important;
-        background-color: #f8fafc;
-        min-height: 100vh;
-      }
-      .pos-manager-sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        width: 260px;
-        background-color: #1e293b;
-        color: #f8fafc;
-        display: flex;
-        flex-direction: column;
-        z-index: 1040;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.15);
-        overflow-y: auto;
-      }
-      .pos-manager-sidebar .nav-link {
-        color: #cbd5e1;
-        border-radius: 6px;
-        padding: 0.65rem 1rem;
-        margin-bottom: 2px;
-        font-size: 0.95rem;
-        display: flex;
-        align-items: center;
-        transition: all 0.15s ease-in-out;
-      }
-      .pos-manager-sidebar .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.08);
-        color: #ffffff;
-      }
-      .pos-manager-sidebar .nav-link.active {
-        background-color: #0d6efd !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
-        border-radius: 6px !important;
-        box-shadow: 0 2px 6px rgba(13, 110, 253, 0.35);
-      }
-      .pos-manager-mobile-bar {
-        display: none;
-      }
-
-      /* --- Layout Thu ngân: Menu gọn, tối đa diện tích bán hàng --- */
-      body.pos-cashier-layout {
-        padding-left: 0 !important;
-        background-color: #f8fafc;
-      }
-      .pos-cashier-nav {
-        background-color: #212529 !important;
-        padding-top: 0.25rem !important;
-        padding-bottom: 0.25rem !important;
-        min-height: 48px;
-      }
-      .pos-cashier-nav .nav-link {
-        color: #dee2e6;
-        padding: 0.4rem 0.85rem !important;
-        border-radius: 6px;
-        margin-right: 4px;
-        font-size: 0.92rem;
-        transition: all 0.15s ease-in-out;
-      }
-      .pos-cashier-nav .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: #ffffff;
-      }
-      .pos-cashier-nav .nav-link.active {
-        background-color: #0d6efd !important;
-        color: #ffffff !important;
-        font-weight: 600 !important;
-        border-radius: 6px !important;
-      }
-
-      /* --- Responsive Mobile cho Manager --- */
-      @media (max-width: 991.98px) {
-        body.pos-manager-layout {
-          padding-left: 0 !important;
-        }
-        .pos-manager-sidebar {
-          transform: translateX(-100%);
-          transition: transform 0.3s ease;
-        }
-        .pos-manager-sidebar.show {
-          transform: translateX(0);
-        }
-        .pos-manager-mobile-bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          background-color: #1e293b;
-          color: #ffffff;
-          padding: 0.5rem 1rem;
-          margin-bottom: 1rem;
-        }
-      }
-
-      /* --- Đảm bảo an toàn khi in hóa đơn --- */
-      @media print {
-        body.pos-manager-layout,
-        body.pos-cashier-layout {
-          padding-left: 0 !important;
-          margin: 0 !important;
-          background: #fff !important;
-        }
-        .pos-manager-sidebar,
-        .pos-manager-mobile-bar,
-        .pos-cashier-nav {
-          display: none !important;
-        }
-      }
-    `;
-    document.head.appendChild(styleEl);
+  // Xác định vai trò từ cache hoặc mặc định theo đường dẫn nghiệp vụ
+  let cachedRole = getSafeLocalStorage('pos_user_role');
+  if (!cachedRole) {
+    // Các trang thuộc phạm vi quản lý mặc định là MANAGER
+    if (['', '/', '/products', '/employees', '/stock-receipts', '/inventory', '/invoices'].includes(currentPath)) {
+      cachedRole = 'MANAGER';
+    } else {
+      cachedRole = 'CASHIER';
+    }
   }
 
-  if (role === 'MANAGER') {
+  const cachedName = getSafeLocalStorage('pos_user_name') || (cachedRole === 'MANAGER' ? 'Quản lý' : 'Thu ngân');
+  const roleLabel = cachedRole === 'MANAGER' ? 'Quản lý' : (cachedRole === 'CASHIER' ? 'Thu ngân' : cachedRole);
+
+  // Áp dụng trạng thái thu gọn đã lưu từ trước khi vẽ
+  let isCollapsedSaved = false;
+  try {
+    isCollapsedSaved = document.documentElement.classList.contains('sidebar-collapsed') ||
+      getSafeLocalStorage('pos_sidebar_collapsed') === 'true';
+  } catch (e) {}
+
+  if (cachedRole === 'MANAGER') {
     // --- KHU VỰC QUẢN LÝ ---
     document.body.classList.remove('pos-cashier-layout');
     document.body.classList.add('pos-manager-layout');
 
-    // Menu Quản lý (7 mục theo đúng yêu cầu):
-    // Tổng quan, Bán hàng, Sản phẩm, Nhập hàng, Tồn kho, Hóa đơn, Tài khoản nhân viên
-    const managerNavItems = [
-      { title: 'Tổng quan', path: '/', icon: 'bi-speedometer2' },
-      { title: 'Bán hàng', path: '/sales', icon: 'bi-cart3' },
-      { title: 'Sản phẩm', path: '/products', icon: 'bi-box-seam' },
-      { title: 'Nhập hàng', path: '/stock-receipts', icon: 'bi-arrow-down-square' },
-      { title: 'Tồn kho', path: '/inventory', icon: 'bi-archive' },
-      { title: 'Hóa đơn', path: '/invoices', icon: 'bi-receipt' },
-      { title: 'Tài khoản nhân viên', path: '/employees', icon: 'bi-people' }
-    ];
+    if (isCollapsedSaved && window.innerWidth >= 992) {
+      document.body.classList.add('sidebar-collapsed');
+      document.documentElement.classList.add('sidebar-collapsed');
+    }
 
-    let navListHtml = '';
-    managerNavItems.forEach(item => {
-      const isActive = (item.path === '/' && currentPath === '/') || (item.path !== '/' && currentPath === item.path);
-      navListHtml += `
-        <li class="nav-item">
-          <a class="nav-link ${isActive ? 'active' : ''}" 
-             href="${item.path}" 
-             ${isActive ? 'aria-current="page"' : ''}>
-            <i class="bi ${item.icon} me-2"></i>
-            <span>${item.title}</span>
-          </a>
-        </li>
-      `;
-    });
+    // Nếu sidebar chưa tồn tại trong DOM thì mới chèn vào
+    if (!document.getElementById('posManagerSidebar')) {
+      const menuGroups = [
+        {
+          groupTitle: 'Tổng quan',
+          items: [
+            { title: 'Tổng quan', path: '/', icon: 'bi-speedometer2' }
+          ]
+        },
+        {
+          groupTitle: 'Giao dịch',
+          items: [
+            { title: 'Bán hàng', path: '/sales', icon: 'bi-cart3' },
+            { title: 'Nhập hàng', path: '/stock-receipts', icon: 'bi-box-arrow-in-down' },
+            { title: 'Hóa đơn', path: '/invoices', icon: 'bi-receipt' }
+          ]
+        },
+        {
+          groupTitle: 'Quản lý',
+          items: [
+            { title: 'Sản phẩm', path: '/products', icon: 'bi-box-seam' },
+            { title: 'Tồn kho', path: '/inventory', icon: 'bi-archive' },
+            { title: 'Tài khoản nhân viên', path: '/employees', icon: 'bi-people' }
+          ]
+        }
+      ];
 
-    const sidebarHtml = `
-      <div class="pos-manager-mobile-bar d-lg-none">
-        <span class="fw-bold">POS Store - Quản lý</span>
-        <button class="btn btn-sm btn-outline-light" id="manager-mobile-toggle">
-          <i class="bi bi-list"></i> Menu
-        </button>
-      </div>
-
-      <aside class="pos-manager-sidebar" id="posManagerSidebar">
-        <!-- Brand Header -->
-        <div class="p-3 border-bottom border-secondary d-flex align-items-center justify-content-between">
-          <div>
-            <div class="fw-bold fs-5 text-white">POS Store</div>
-            <span class="badge bg-primary">Quản lý</span>
-          </div>
-        </div>
-
-        <!-- Navigation Menu -->
-        <nav class="p-3 flex-grow-1">
-          <ul class="nav flex-column">
-            ${navListHtml}
-          </ul>
-        </nav>
-
-        <!-- User Greeting & Logout Footer -->
-        <div class="p-3 border-top border-secondary mt-auto bg-dark bg-opacity-25">
-          <div class="text-white small mb-2 text-truncate" id="manager-user-greeting">
-            Xin chào, <strong>${escapeHtml(name)}</strong>
-            <div class="text-info mt-1">Vai trò: ${roleLabel}</div>
-          </div>
-          <a href="/profile" class="btn btn-outline-info btn-sm w-100 mb-2">
-            <i class="bi bi-person-circle me-1"></i>Tài khoản của tôi
-          </a>
-          <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="logout()">
-            <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
-          </button>
-        </div>
-      </aside>
-    `;
-
-    document.body.insertAdjacentHTML('afterbegin', sidebarHtml);
-
-    // Xử lý toggle menu trên mobile
-    const toggleBtn = document.getElementById('manager-mobile-toggle');
-    const sidebar = document.getElementById('posManagerSidebar');
-    if (toggleBtn && sidebar) {
-      toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('show');
+      let currentPageTitle = 'Quản lý POS Store';
+      let navListHtml = '';
+      menuGroups.forEach(grp => {
+        navListHtml += `<div class="pos-sidebar-group-title" title="${escapeHtml(grp.groupTitle)}">${escapeHtml(grp.groupTitle)}</div>`;
+        grp.items.forEach(item => {
+          const isActive = (item.path === '/' && currentPath === '/') || (item.path !== '/' && currentPath === item.path);
+          if (isActive) currentPageTitle = item.title;
+          navListHtml += `
+            <a class="nav-link ${isActive ? 'active' : ''}" 
+               href="${item.path}" 
+               title="${item.title}"
+               aria-label="${item.title}"
+               ${isActive ? 'aria-current="page"' : ''}>
+              <i class="bi ${item.icon}"></i>
+              <span>${item.title}</span>
+            </a>
+          `;
+        });
       });
+
+      const userInitial = (cachedName.trim().charAt(0) || 'Q').toUpperCase();
+
+      const layoutMarkup = `
+        <!-- Backdrop cho Mobile Drawer -->
+        <div class="pos-sidebar-backdrop" id="posSidebarBackdrop"></div>
+
+        <!-- Topbar cố định phía trên -->
+        <header class="pos-topbar-wrapper" id="posTopbar">
+          <div class="pos-topbar-left">
+            <!-- Nút mở drawer trên mobile -->
+            <button class="btn btn-sm btn-outline-secondary d-lg-none" id="btn-mobile-sidebar-toggle" aria-label="Mở menu">
+              <i class="bi bi-list fs-5"></i>
+            </button>
+            <!-- Nút thu gọn sidebar trên desktop -->
+            <button class="btn btn-sm btn-outline-secondary btn-sidebar-collapse d-none d-lg-inline-flex" id="btn-desktop-sidebar-collapse" title="Thu gọn / Mở rộng menu" aria-label="Thu gọn menu" aria-expanded="${isCollapsedSaved ? 'false' : 'true'}">
+              <i class="bi ${isCollapsedSaved ? 'bi-layout-sidebar' : 'bi-layout-sidebar-inset'}"></i>
+            </button>
+            <!-- Tên trang hiện tại -->
+            <span class="pos-topbar-page-name" id="pos-page-title">${escapeHtml(currentPageTitle)}</span>
+          </div>
+
+          <!-- Menu tài khoản dropdown -->
+          <div class="dropdown">
+            <button class="pos-user-dropdown-btn dropdown-toggle" type="button" id="posUserMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="pos-user-avatar" id="pos-user-avatar">${userInitial}</span>
+              <span class="d-none d-sm-inline fw-semibold text-truncate" id="pos-user-display-name" style="max-width: 140px;">${escapeHtml(cachedName)}</span>
+              <span class="badge bg-primary ms-1" id="pos-user-role-badge">${roleLabel}</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="posUserMenuBtn">
+              <li class="px-3 py-2 border-bottom">
+                <div class="fw-bold text-dark text-truncate" id="pos-dropdown-user-name">${escapeHtml(cachedName)}</div>
+                <div class="small text-muted">Vai trò: <span class="text-primary fw-medium" id="pos-dropdown-user-role">${roleLabel}</span></div>
+              </li>
+              <li>
+                <a class="dropdown-item py-2" href="/profile">
+                  <i class="bi bi-person-circle me-2 text-primary"></i>Tài khoản của tôi
+                </a>
+              </li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li>
+                <button class="dropdown-item py-2 text-danger" type="button" onclick="logout()">
+                  <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                </button>
+              </li>
+            </ul>
+          </div>
+        </header>
+
+        <!-- Sidebar bên trái -->
+        <aside class="pos-manager-sidebar" id="posManagerSidebar" aria-label="Điều hướng chính">
+          <!-- Brand Header -->
+          <div class="pos-sidebar-brand">
+            <a href="/" class="text-decoration-none brand-text" title="POS Store">
+              <i class="bi bi-shop text-primary fs-5"></i>
+              <span class="brand-title">POS Store</span>
+            </a>
+            <span class="badge bg-primary brand-badge">Quản lý</span>
+            <button type="button" class="btn btn-sm btn-link text-white p-0 d-lg-none" id="btn-close-mobile-drawer" aria-label="Đóng menu">
+              <i class="bi bi-x-lg fs-5"></i>
+            </button>
+          </div>
+
+          <!-- Navigation Menu -->
+          <nav class="pos-sidebar-nav-container" aria-label="Danh mục chức năng">
+            ${navListHtml}
+          </nav>
+
+          <!-- Sidebar Footer -->
+          <div class="pos-sidebar-footer">
+            <!-- Khi mở rộng: 2 nút đầy đủ nhãn không xuống dòng -->
+            <div class="pos-sidebar-footer-expanded">
+              <a href="/profile" class="btn btn-outline-light btn-sm" title="Tài khoản của tôi" aria-label="Tài khoản của tôi">
+                <i class="bi bi-person-gear me-1"></i><span>Tài khoản</span>
+              </a>
+              <button type="button" class="btn btn-outline-danger btn-sm" onclick="logout()" title="Đăng xuất" aria-label="Đăng xuất">
+                <i class="bi bi-box-arrow-right me-1"></i><span>Đăng xuất</span>
+              </button>
+            </div>
+            <!-- Khi thu gọn: 2 nút icon vuông 42x42px căn giữa -->
+            <div class="pos-sidebar-footer-collapsed">
+              <a href="/profile" class="btn btn-outline-light pos-footer-icon-btn" title="Tài khoản của tôi" aria-label="Tài khoản của tôi">
+                <i class="bi bi-person-gear"></i>
+              </a>
+              <button type="button" class="btn btn-outline-danger pos-footer-icon-btn" onclick="logout()" title="Đăng xuất" aria-label="Đăng xuất">
+                <i class="bi bi-box-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </aside>
+      `;
+
+      document.body.insertAdjacentHTML('afterbegin', layoutMarkup);
+
+      // Xử lý sự kiện thu gọn desktop
+      const desktopCollapseBtn = document.getElementById('btn-desktop-sidebar-collapse');
+      if (desktopCollapseBtn) {
+        desktopCollapseBtn.addEventListener('click', () => {
+          // Bật transition tạm thời trong 280ms để hiệu ứng bấm nút mượt mà
+          document.body.classList.add('sidebar-transitioning');
+          const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+          document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
+          setSafeLocalStorage('pos_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+          desktopCollapseBtn.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+          const iconEl = desktopCollapseBtn.querySelector('i');
+          if (iconEl) {
+            iconEl.className = isCollapsed ? 'bi bi-layout-sidebar' : 'bi bi-layout-sidebar-inset';
+          }
+          setTimeout(() => {
+            document.body.classList.remove('sidebar-transitioning');
+          }, 280);
+        });
+      }
+
+      // Xử lý sự kiện mở / đóng drawer mobile
+      const mobileToggleBtn = document.getElementById('btn-mobile-sidebar-toggle');
+      const closeDrawerBtn = document.getElementById('btn-close-mobile-drawer');
+      const sidebarEl = document.getElementById('posManagerSidebar');
+      const backdropEl = document.getElementById('posSidebarBackdrop');
+
+      function openMobileDrawer() {
+        if (sidebarEl) sidebarEl.classList.add('show');
+        if (backdropEl) backdropEl.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeMobileDrawer() {
+        if (sidebarEl) sidebarEl.classList.remove('show');
+        if (backdropEl) backdropEl.classList.remove('show');
+        document.body.style.overflow = '';
+      }
+
+      if (mobileToggleBtn) mobileToggleBtn.addEventListener('click', openMobileDrawer);
+      if (closeDrawerBtn) closeDrawerBtn.addEventListener('click', closeMobileDrawer);
+      if (backdropEl) backdropEl.addEventListener('click', closeMobileDrawer);
     }
 
   } else {
@@ -238,64 +238,126 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.body.classList.remove('pos-manager-layout');
     document.body.classList.add('pos-cashier-layout');
 
-    // Menu Thu ngân (4 mục gọn gàng, ưu tiên diện tích bán hàng):
-    // Bán hàng, Hóa đơn của tôi, Tra cứu tồn kho, Tài khoản của tôi
-    const cashierNavItems = [
-      { title: 'Bán hàng', path: '/sales', icon: 'bi-cart3' },
-      { title: 'Hóa đơn của tôi', path: '/invoices', icon: 'bi-receipt' },
-      { title: 'Tra cứu tồn kho', path: '/inventory', icon: 'bi-archive' },
-      { title: 'Tài khoản của tôi', path: '/profile', icon: 'bi-person-circle' }
-    ];
+    if (!document.querySelector('.pos-cashier-nav')) {
+      const cashierNavItems = [
+        { title: 'Bán hàng', path: '/sales', icon: 'bi-cart3' },
+        { title: 'Hóa đơn của tôi', path: '/invoices', icon: 'bi-receipt' },
+        { title: 'Tra cứu tồn kho', path: '/inventory', icon: 'bi-archive' },
+        { title: 'Tài khoản của tôi', path: '/profile', icon: 'bi-person-circle' }
+      ];
 
-    let navListHtml = '';
-    cashierNavItems.forEach(item => {
-      const isActive = (item.path === '/' && currentPath === '/') || (item.path !== '/' && currentPath === item.path);
-      navListHtml += `
-        <li class="nav-item">
-          <a class="nav-link ${isActive ? 'active' : ''}" 
-             href="${item.path}" 
-             ${isActive ? 'aria-current="page"' : ''}>
-            <i class="bi ${item.icon} me-1"></i>
-            <span>${item.title}</span>
-          </a>
-        </li>
-      `;
-    });
+      let navListHtml = '';
+      cashierNavItems.forEach(item => {
+        const isActive = (item.path === '/' && currentPath === '/') || (item.path !== '/' && currentPath === item.path);
+        navListHtml += `
+          <li class="nav-item">
+            <a class="nav-link ${isActive ? 'active' : ''}" 
+               href="${item.path}" 
+               ${isActive ? 'aria-current="page"' : ''}>
+              <i class="bi ${item.icon} me-1"></i>
+              <span>${item.title}</span>
+            </a>
+          </li>
+        `;
+      });
 
-    const cashierNavHtml = `
-      <nav class="navbar navbar-expand-lg navbar-dark bg-dark pos-cashier-nav mb-3 shadow-sm">
-        <div class="container-fluid px-2">
-          <a class="navbar-brand py-0 me-3 fw-bold fs-6" href="/sales">
-            POS Store <span class="badge bg-success ms-1">Thu ngân</span>
-          </a>
-          <button class="navbar-toggler py-1 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#cashierNavCollapse">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="cashierNavCollapse">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
-              ${navListHtml}
-            </ul>
-            <div class="d-flex text-white align-items-center py-1">
-              <span class="me-3 small" id="cashier-user-greeting">
-                Xin chào, <strong>${escapeHtml(name)}</strong>
-                <span class="badge bg-secondary ms-1">${roleLabel}</span>
-              </span>
-              <button type="button" class="btn btn-outline-light btn-sm py-1 px-2" onclick="logout()">
-                <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
-              </button>
+      const cashierNavHtml = `
+        <nav class="navbar navbar-expand-lg navbar-dark pos-cashier-nav mb-3 shadow-sm" aria-label="Thanh điều hướng thu ngân">
+          <div class="container-fluid px-3">
+            <a class="navbar-brand py-0 me-3 fw-bold fs-6 d-flex align-items-center" href="/sales">
+              <i class="bi bi-shop me-2 text-primary"></i>POS Store <span class="badge bg-success ms-2">Thu ngân</span>
+            </a>
+            <button class="navbar-toggler py-1 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#cashierNavCollapse" aria-label="Menu">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="cashierNavCollapse">
+              <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-lg-center">
+                ${navListHtml}
+              </ul>
+              <div class="d-flex text-white align-items-center py-1">
+                <span class="me-3 small" id="cashier-user-greeting">
+                  Xin chào, <strong>${escapeHtml(cachedName)}</strong>
+                  <span class="badge bg-secondary ms-1">${roleLabel}</span>
+                </span>
+                <button type="button" class="btn btn-outline-light btn-sm py-1 px-2" onclick="logout()">
+                  <i class="bi bi-box-arrow-right me-1"></i>Đăng xuất
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
-    `;
+        </nav>
+      `;
 
-    document.body.insertAdjacentHTML('afterbegin', cashierNavHtml);
+      document.body.insertAdjacentHTML('afterbegin', cashierNavHtml);
+    }
   }
-});
+}
+
+// Cập nhật thông tin tài khoản người dùng trong nền sau khi API trả về
+async function syncUserInfoAsync() {
+  try {
+    const res = await window.apiFetch('/api/auth/me', { method: 'GET' });
+    if (!res || !res.ok) return;
+
+    const user = await res.json();
+    const role = user.role;
+    const name = user.fullName || user.username || 'Người dùng';
+    const roleLabel = role === 'MANAGER' ? 'Quản lý' : (role === 'CASHIER' ? 'Thu ngân' : role);
+
+    // Lưu vào cache để trang kế tiếp hiển thị ngay tức thì
+    setSafeLocalStorage('pos_user_role', role);
+    setSafeLocalStorage('pos_user_name', name);
+
+    // Cập nhật text hiển thị trên Topbar/Navbar mà không xóa dựng lại khung giao diện
+    const displayNameEl = document.getElementById('pos-user-display-name');
+    if (displayNameEl && displayNameEl.textContent !== name) {
+      displayNameEl.textContent = name;
+    }
+    const avatarEl = document.getElementById('pos-user-avatar');
+    if (avatarEl) {
+      avatarEl.textContent = (name.trim().charAt(0) || 'Q').toUpperCase();
+    }
+    const roleBadgeEl = document.getElementById('pos-user-role-badge');
+    if (roleBadgeEl && roleBadgeEl.textContent !== roleLabel) {
+      roleBadgeEl.textContent = roleLabel;
+    }
+    const dropNameEl = document.getElementById('pos-dropdown-user-name');
+    if (dropNameEl && dropNameEl.textContent !== name) {
+      dropNameEl.textContent = name;
+    }
+    const dropRoleEl = document.getElementById('pos-dropdown-user-role');
+    if (dropRoleEl && dropRoleEl.textContent !== roleLabel) {
+      dropRoleEl.textContent = roleLabel;
+    }
+    const cashierGreeting = document.getElementById('cashier-user-greeting');
+    if (cashierGreeting) {
+      cashierGreeting.innerHTML = `Xin chào, <strong>${escapeHtml(name)}</strong> <span class="badge bg-secondary ms-1">${roleLabel}</span>`;
+    }
+
+    // Nếu vai trò thực tế khác vai trò đã render trước đó, re-render chính xác
+    const isManagerLayout = document.body.classList.contains('pos-manager-layout');
+    if ((role === 'MANAGER' && !isManagerLayout) || (role === 'CASHIER' && isManagerLayout)) {
+      renderLayoutSync();
+    }
+  } catch (err) {
+    console.warn('Lỗi đồng bộ thông tin tài khoản:', err);
+  }
+}
+
+// Khởi chạy bố cục đồng bộ ngay khi DOM sẵn sàng
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    renderLayoutSync();
+    syncUserInfoAsync();
+  });
+} else {
+  renderLayoutSync();
+  syncUserInfoAsync();
+}
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str.replace(/[&<>'"]/g, tag => ({
+  return String(str).replace(/[&<>'"]/g, tag => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -305,11 +367,16 @@ function escapeHtml(str) {
 }
 
 async function logout() {
-  const res = await window.apiFetch('/api/auth/logout', { method: 'POST' });
-  if (res && res.ok) {
-    localStorage.clear();
+  try {
+    const res = await window.apiFetch('/api/auth/logout', { method: 'POST' });
+    if (res && res.ok) {
+      try { localStorage.clear(); } catch (e) {}
+      window.location.href = '/login';
+    } else {
+      alert('Đăng xuất thất bại');
+    }
+  } catch (e) {
+    try { localStorage.clear(); } catch (err) {}
     window.location.href = '/login';
-  } else {
-    alert('Đăng xuất thất bại');
   }
 }

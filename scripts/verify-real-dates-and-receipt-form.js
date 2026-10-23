@@ -72,7 +72,7 @@ async function run() {
   // 3. Khởi động server kiểm thử riêng
   console.log(`Khởi động server kiểm thử độc lập tại port ${TEST_PORT} (DB: pos_store_test)...`);
   const serverProcess = spawn('node', ['server.js'], {
-    env: { ...process.env, DB_NAME: 'pos_store_test', PORT: String(TEST_PORT), SESSION_SECRET: 'test_date_secret' }
+    env: { ...process.env, DB_NAME: 'pos_store_test', PORT: String(TEST_PORT), METRICS_PORT: '0', SESSION_SECRET: 'test_date_secret' }
   });
 
   await new Promise((resolve) => {

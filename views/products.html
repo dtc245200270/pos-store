@@ -3,22 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quản lý sản phẩm - POS</title>
+  <title>Quản lý sản phẩm - POS Store</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <style>
-    .badge-active { background-color: #198754; }
-    .badge-inactive { background-color: #6c757d; }
-    .table th { font-weight: 600; font-size: 0.9rem; }
-  </style>
+  <link rel="stylesheet" href="/public/css/style.css">
+  <script src="/public/js/layout-init.js"></script>
 </head>
-<body class="bg-light">
-  <div class="container py-4">
+<body>
+  <div class="pos-content-container">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom gap-2">
       <div>
-        <h2 class="h3 mb-1 fw-bold text-dark">📦 Quản lý sản phẩm</h2>
-        <p class="text-muted small mb-0">Xem danh mục, thêm mới, sửa thông tin SKU/giá và quản lý trạng thái kinh doanh</p>
+        <h2 class="page-title mb-1">
+          <i class="bi bi-box-seam me-2 text-primary"></i>Quản lý sản phẩm
+        </h2>
+        <p class="page-subtitle">
+          Danh mục mặt hàng, thiết lập giá bán, đơn vị tính và trạng thái kinh doanh
+        </p>
       </div>
       <div>
         <button class="btn btn-primary px-3 shadow-sm" id="btn-add-product" onclick="showAddProductModal()">
@@ -28,8 +29,8 @@
     </div>
 
     <!-- Filter & Search Bar -->
-    <div class="card shadow-sm border-0 mb-4">
-      <div class="card-body">
+    <div class="card shadow-sm border mb-4">
+      <div class="card-body p-3">
         <div class="row g-2 align-items-center">
           <div class="col-md-6 col-lg-5">
             <div class="input-group">
@@ -37,14 +38,17 @@
               <input type="text" id="search-products" class="form-control" placeholder="Tìm theo SKU hoặc tên sản phẩm...">
             </div>
           </div>
-          <div class="col-md-4 col-lg-3">
-            <select id="filter-status" class="form-select">
-              <option value="all">-- Tất cả trạng thái --</option>
-              <option value="active">Đang hoạt động</option>
-              <option value="inactive">Ngừng kinh doanh</option>
-            </select>
+          <div class="col-md-4 col-lg-4">
+            <div class="input-group">
+              <label class="input-group-text bg-white" for="filter-status"><i class="bi bi-funnel me-1"></i>Trạng thái:</label>
+              <select id="filter-status" class="form-select">
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="inactive">Ngừng kinh doanh</option>
+              </select>
+            </div>
           </div>
-          <div class="col-md-2 col-lg-2">
+          <div class="col-md-2 col-lg-3 d-flex justify-content-md-end">
             <button class="btn btn-outline-secondary w-100" id="btn-reset-filter" onclick="resetFilters()">
               <i class="bi bi-arrow-counterclockwise me-1"></i> Đặt lại
             </button>
@@ -54,19 +58,19 @@
     </div>
 
     <!-- Products Table -->
-    <div class="card shadow-sm border-0 mb-4">
+    <div class="card shadow-sm border mb-4">
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0" id="products-table">
-            <thead class="table-light border-bottom">
+            <thead>
               <tr>
-                <th class="ps-3 py-3" style="width: 130px;">Mã SKU</th>
-                <th class="py-3">Tên sản phẩm</th>
-                <th class="py-3 text-center" style="width: 90px;">ĐVT</th>
-                <th class="py-3 text-end" style="width: 140px;">Giá bán (VNĐ)</th>
-                <th class="py-3 text-center" style="width: 110px;">Tồn kho</th>
-                <th class="py-3 text-center" style="width: 150px;">Trạng thái</th>
-                <th class="py-3 text-end pe-3" style="width: 220px;">Thao tác</th>
+                <th class="ps-3" style="width: 140px;">Mã SKU</th>
+                <th>Tên sản phẩm</th>
+                <th class="text-center" style="width: 90px;">ĐVT</th>
+                <th class="text-end" style="width: 150px;">Giá bán</th>
+                <th class="text-center" style="width: 120px;">Tồn kho</th>
+                <th class="text-center" style="width: 150px;">Trạng thái</th>
+                <th class="text-end pe-3" style="width: 170px;">Thao tác</th>
               </tr>
             </thead>
             <tbody id="products-tbody">
@@ -93,33 +97,33 @@
     <!-- Modal Thêm / Sửa Sản Phẩm -->
     <div class="modal fade" id="product-modal" tabindex="-1" aria-labelledby="product-modal-title" aria-hidden="true" style="background-color: rgba(0, 0, 0, 0.5);">
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow">
-          <div class="modal-header bg-light">
+        <div class="modal-content shadow border-0">
+          <div class="modal-header bg-primary text-white">
             <h5 class="modal-title fw-bold" id="product-modal-title">Thêm Sản Phẩm Mới</h5>
-            <button type="button" class="btn-close" onclick="closeModal('product-modal')" aria-label="Đóng"></button>
+            <button type="button" class="btn-close btn-close-white" onclick="closeModal('product-modal')" aria-label="Đóng"></button>
           </div>
           <div class="modal-body p-4">
             <input type="hidden" id="p-id">
 
             <div class="mb-3">
-              <label for="p-sku" class="form-label fw-bold">Mã SKU <span class="text-danger">*</span></label>
+              <label for="p-sku" class="form-label">Mã SKU <span class="text-danger">*</span></label>
               <input type="text" id="p-sku" class="form-control" placeholder="Ví dụ: BUTBI001, TAPVO002" autocomplete="off">
               <div class="form-text small text-muted">Mã SKU định danh duy nhất của sản phẩm trong kho.</div>
             </div>
 
             <div class="mb-3">
-              <label for="p-name" class="form-label fw-bold">Tên sản phẩm <span class="text-danger">*</span></label>
+              <label for="p-name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
               <input type="text" id="p-name" class="form-control" placeholder="Nhập tên sản phẩm đầy đủ" autocomplete="off">
             </div>
 
             <div class="row g-2 mb-3">
               <div class="col-6">
-                <label for="p-unit" class="form-label fw-bold">Đơn vị tính <span class="text-danger">*</span></label>
+                <label for="p-unit" class="form-label">Đơn vị tính <span class="text-danger">*</span></label>
                 <input type="text" id="p-unit" class="form-control" placeholder="Cái, Hộp, Cây, Cuốn...">
               </div>
               <div class="col-6">
-                <label for="p-price" class="form-label fw-bold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
-                <input type="number" id="p-price" class="form-control" placeholder="0" min="0" step="100">
+                <label for="p-price" class="form-label">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                <input type="number" id="p-price" class="form-control font-monospace" placeholder="0" min="0" step="100">
               </div>
             </div>
 
@@ -130,7 +134,7 @@
               </div>
             </div>
 
-            <!-- Khung báo lỗi -->
+            <!-- Khung báo lỗi bên dưới ô nhập -->
             <div id="p-error" class="alert alert-danger d-none py-2 small mb-0"></div>
           </div>
           <div class="modal-footer bg-light">
@@ -179,6 +183,7 @@
 
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/public/js/auth.js"></script>
   <script src="/public/js/layout.js"></script>
   <script src="/public/js/products.js"></script>

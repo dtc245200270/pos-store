@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../../config/db');
 const { requireLogin, requireRole } = require('../../middleware/auth');
+const logger = require('../../config/logger');
 
 const router = express.Router();
 
@@ -73,8 +74,7 @@ router.get('/', async (req, res) => {
     );
     res.json(rows);
   } catch (error) {
-    console.error('Lỗi lấy danh sách sản phẩm:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'get_products', error);
   }
 });
 
@@ -96,8 +96,7 @@ router.get('/:id', async (req, res) => {
     }
     res.json(rows[0]);
   } catch (error) {
-    console.error('Lỗi lấy chi tiết sản phẩm:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'get_product_detail', error);
   }
 });
 
@@ -148,8 +147,7 @@ router.post('/', requireRole('MANAGER'), async (req, res) => {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ error: 'Mã SKU đã tồn tại' });
     }
-    console.error('Lỗi thêm sản phẩm:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'create_product', error);
   }
 });
 
@@ -211,8 +209,7 @@ router.put('/:id', requireRole('MANAGER'), async (req, res) => {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(400).json({ error: 'Mã SKU đã tồn tại ở sản phẩm khác' });
     }
-    console.error('Lỗi cập nhật sản phẩm:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'update_product', error);
   }
 });
 
@@ -244,8 +241,7 @@ router.patch('/:id/toggle-active', requireRole('MANAGER'), async (req, res) => {
       is_active: newActiveState 
     });
   } catch (error) {
-    console.error('Lỗi đổi trạng thái sản phẩm:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'toggle_product_active', error);
   }
 });
 
@@ -337,8 +333,7 @@ router.delete('/:id', requireRole('MANAGER'), async (req, res) => {
         can_toggle: true
       });
     }
-    console.error('Lỗi xóa sản phẩm:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'delete_product', error);
   }
 });
 module.exports = router;

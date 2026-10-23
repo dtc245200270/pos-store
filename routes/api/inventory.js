@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../../config/db');
 const { requireLogin } = require('../../middleware/auth');
+const logger = require('../../config/logger');
 
 const router = express.Router();
 
@@ -101,10 +102,58 @@ router.get('/', async (req, res) => {
       total: rows.length
     });
   } catch (error) {
-    console.error('Lỗi lấy danh sách tồn kho:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ khi lấy dữ liệu tồn kho' });
+    return logger.sendServerError(res, req, 'get_inventory', error);
   }
 });
+
+// ----------------------------------------------------------------------------
+// KIỂM TRA NGÀY HỢP LỆ VÀ XỬ LÝ KHOẢNG NGÀY
+// ----------------------------------------------------------------------------
+// Kiểm tra ngày hợp lệ theo dương lịch thực tế (YYYY-MM-DD), chặn các ngày không tồn tại (như 2026-02-30, 2026-04-31) và chấp nhận năm nhuận
+function isValidCalendarDate(dateStr) {
+  if (typeof dateStr !== 'string') return false;
+  const match = dateStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const day = parseInt(match[3], 10);
+  if (year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const d = new Date(year, month - 1, day);
+  return (d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day);
+}
+
+// Lấy mốc 00:00:00 của ngày tiếp theo cho điều kiện < (nhỏ hơn ngày kế tiếp)
+function getNextDayMidnight(dateStr) {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
+  const y = nextDate.getUTCFullYear();
+  const m = String(nextDate.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(nextDate.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d} 00:00:00`;
+}
+
+function validateDateRange(from_date, to_date) {
+  const cleanFromDate = typeof from_date === 'string' && from_date.trim() ? from_date.trim() : null;
+  const cleanToDate = typeof to_date === 'string' && to_date.trim() ? to_date.trim() : null;
+
+  if (cleanFromDate) {
+    if (!isValidCalendarDate(cleanFromDate)) {
+      return { error: 'Định dạng Từ ngày không hợp lệ hoặc không tồn tại trên lịch.', status: 400 };
+    }
+  }
+
+  if (cleanToDate) {
+    if (!isValidCalendarDate(cleanToDate)) {
+      return { error: 'Định dạng Đến ngày không hợp lệ hoặc không tồn tại trên lịch.', status: 400 };
+    }
+  }
+
+  if (cleanFromDate && cleanToDate && cleanFromDate > cleanToDate) {
+    return { error: 'Từ ngày không được lớn hơn Đến ngày.', status: 400 };
+  }
+
+  return { cleanFromDate, cleanToDate };
+}
 
 // ----------------------------------------------------------------------------
 // 2. LỊCH SỬ TOÀN BỘ BIẾN ĐỘNG KHO (CHỈ MANAGER MỚI ĐƯỢC PHÉP TRUY CẬP)
@@ -118,7 +167,14 @@ router.get('/movements', async (req, res) => {
       });
     }
 
-    const { q, limit: rawLimit } = req.query;
+    const { q, from_date, to_date, limit: rawLimit } = req.query;
+
+    const dateVal = validateDateRange(from_date, to_date);
+    if (dateVal.error) {
+      return res.status(dateVal.status).json({ error: dateVal.error });
+    }
+    const { cleanFromDate, cleanToDate } = dateVal;
+
     const limit = Math.min(Math.max(parseInt(rawLimit, 10) || 50, 1), 200);
 
     let query = `
@@ -159,14 +215,23 @@ router.get('/movements', async (req, res) => {
       params.push(search, search, search, search);
     }
 
+    if (cleanFromDate) {
+      query += ' AND sm.created_at >= ?';
+      params.push(`${cleanFromDate} 00:00:00`);
+    }
+
+    if (cleanToDate) {
+      query += ' AND sm.created_at < ?';
+      params.push(getNextDayMidnight(cleanToDate));
+    }
+
     query += ' ORDER BY sm.created_at DESC, sm.id DESC LIMIT ?';
     params.push(limit);
 
     const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (error) {
-    console.error('Lỗi lấy toàn bộ biến động kho:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ khi lấy toàn bộ biến động kho' });
+    return logger.sendServerError(res, req, 'get_inventory_movements', error);
   }
 });
 
@@ -189,6 +254,14 @@ router.get('/:productId/movements', async (req, res) => {
       return res.status(400).json({ error: 'Mã sản phẩm không hợp lệ' });
     }
 
+    const { from_date, to_date, q } = req.query;
+
+    const dateVal = validateDateRange(from_date, to_date);
+    if (dateVal.error) {
+      return res.status(dateVal.status).json({ error: dateVal.error });
+    }
+    const { cleanFromDate, cleanToDate } = dateVal;
+
     // Kiểm tra sản phẩm tồn tại
     const [products] = await pool.query(
       'SELECT id, sku, name, unit, stock_quantity, is_active FROM products WHERE id = ?',
@@ -202,8 +275,8 @@ router.get('/:productId/movements', async (req, res) => {
     const product = products[0];
 
     // Lấy toàn bộ biến động kho kèm thông tin chứng từ & người thực hiện
-    const [movements] = await pool.query(
-      `SELECT 
+    let query = `
+      SELECT 
         sm.id,
         sm.product_id,
         sm.quantity_delta,
@@ -231,17 +304,35 @@ router.get('/:productId/movements', async (req, res) => {
       LEFT JOIN stock_receipts rec ON ri.receipt_id = rec.id
       LEFT JOIN users u_rec ON rec.created_by = u_rec.id
       WHERE sm.product_id = ?
-      ORDER BY sm.created_at DESC, sm.id DESC`,
-      [pId]
-    );
+    `;
+    const params = [pId];
+
+    if (q && q.trim()) {
+      query += ` AND (p.sku LIKE ? OR p.name LIKE ? OR rec.receipt_no LIKE ? OR inv.invoice_no LIKE ?)`;
+      const search = `%${q.trim()}%`;
+      params.push(search, search, search, search);
+    }
+
+    if (cleanFromDate) {
+      query += ' AND sm.created_at >= ?';
+      params.push(`${cleanFromDate} 00:00:00`);
+    }
+
+    if (cleanToDate) {
+      query += ' AND sm.created_at < ?';
+      params.push(getNextDayMidnight(cleanToDate));
+    }
+
+    query += ' ORDER BY sm.created_at DESC, sm.id DESC';
+
+    const [movements] = await pool.query(query, params);
 
     res.json({
       product,
       movements
     });
   } catch (error) {
-    console.error('Lỗi lấy lịch sử biến động kho sản phẩm:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ khi lấy lịch sử biến động kho' });
+    return logger.sendServerError(res, req, 'get_product_movements', error);
   }
 });
 

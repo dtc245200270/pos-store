@@ -68,7 +68,7 @@ async function run() {
   // 3. Khởi động server kiểm thử riêng trên cổng TEST_PORT
   console.log(`Khởi động server kiểm thử trên cổng ${TEST_PORT} kết nối tới pos_store_test...`);
   const serverProcess = spawn('node', ['server.js'], {
-    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'secret_test_last_mgr', PORT: String(TEST_PORT) }
+    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'secret_test_last_mgr', PORT: String(TEST_PORT), METRICS_PORT: '0' }
   });
 
   await new Promise((resolve) => {

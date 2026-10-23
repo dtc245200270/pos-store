@@ -87,6 +87,14 @@
             window.loginCountdownTimer = null;
           }
           csrfToken = data.csrfToken;
+          try {
+            if (window.localStorage) {
+              localStorage.setItem('pos_user_role', data.role);
+              if (data.fullName || data.username) {
+                localStorage.setItem('pos_user_name', data.fullName || data.username);
+              }
+            }
+          } catch (e) {}
           if (data.role === 'CASHIER') {
             window.location.href = '/sales';
           } else {
@@ -99,7 +107,11 @@
           }
 
           errorMsg.className = 'alert alert-danger';
-          errorMsg.textContent = data.error || 'Lỗi đăng nhập';
+          if (data && data.requestId) {
+            errorMsg.textContent = 'Không thể thực hiện thao tác. Mã tra cứu: ' + data.requestId;
+          } else {
+            errorMsg.textContent = data.error || 'Lỗi đăng nhập';
+          }
           errorMsg.classList.remove('d-none');
 
           if (data.retryAfterSeconds && Number(data.retryAfterSeconds) > 0) {

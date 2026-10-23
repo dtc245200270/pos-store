@@ -145,7 +145,7 @@ async function run() {
 
   // 2. Khởi động server test cổng 3014
   const serverProcess = spawn('node', ['server.js'], {
-    env: { ...process.env, DB_NAME: 'pos_store_test', PORT: String(PORT), SESSION_SECRET: 'test_inv_ui_secret' }
+    env: { ...process.env, DB_NAME: 'pos_store_test', PORT: String(PORT), METRICS_PORT: '0', SESSION_SECRET: 'test_inv_ui_secret' }
   });
 
   await new Promise((resolve) => {

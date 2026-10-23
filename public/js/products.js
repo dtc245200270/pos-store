@@ -140,16 +140,30 @@ function renderProducts(data) {
           : '<span class="badge bg-secondary px-2 py-1"><i class="bi bi-slash-circle me-1"></i>Ngừng kinh doanh</span>'}
       </td>
       <td class="text-end pe-3">
-        <div class="btn-group btn-group-sm" role="group">
-          <button class="btn btn-outline-primary" onclick="showEditProductModal(${p.id})" title="Sửa thông tin sản phẩm">
-            <i class="bi bi-pencil"></i> Sửa
+        <div class="d-flex justify-content-end align-items-center gap-1">
+          <button class="btn btn-sm btn-outline-primary" onclick="showEditProductModal(${p.id})" title="Sửa thông tin sản phẩm">
+            <i class="bi bi-pencil me-1"></i>Sửa
           </button>
-          <button class="btn ${p.is_active ? 'btn-outline-warning' : 'btn-outline-success'}" onclick="toggleActive(${p.id}, ${!p.is_active}, '${escapeJs(p.name)}')" title="${p.is_active ? 'Ngừng kinh doanh' : 'Kích hoạt lại'}">
-            ${p.is_active ? '<i class="bi bi-slash-circle"></i> Ngừng KD' : '<i class="bi bi-arrow-repeat"></i> Kích hoạt'}
-          </button>
-          <button class="btn btn-outline-danger" onclick="deleteProduct(${p.id}, '${escapeJs(p.name)}')" title="Xóa vĩnh viễn sản phẩm">
-            <i class="bi bi-trash"></i> Xóa
-          </button>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thao tác khác">
+              Thao tác
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li>
+                <button class="dropdown-item py-2" type="button" onclick="toggleActive(${p.id}, ${!p.is_active}, '${escapeJs(p.name)}')">
+                  ${p.is_active 
+                    ? '<i class="bi bi-slash-circle me-2 text-warning"></i>Ngừng kinh doanh' 
+                    : '<i class="bi bi-arrow-repeat me-2 text-success"></i>Kích hoạt lại'}
+                </button>
+              </li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li>
+                <button class="dropdown-item py-2 text-danger" type="button" onclick="deleteProduct(${p.id}, '${escapeJs(p.name)}')">
+                  <i class="bi bi-trash me-2"></i>Xóa sản phẩm
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
       </td>
     `;
@@ -266,7 +280,7 @@ async function toggleActiveDirect(id, newStatus) {
     } else {
       let data = {};
       try { data = await res.json(); } catch (e) {}
-      alert(data.error || 'Lỗi cập nhật trạng thái kinh doanh');
+      alert(window.formatApiError(data, 'Lỗi cập nhật trạng thái kinh doanh'));
     }
   } catch (err) {
     console.error('Lỗi toggleActiveDirect:', err);
@@ -300,6 +314,10 @@ async function deleteProduct(id, productName) {
       alert('Đã xóa sản phẩm thành công.');
       await loadProducts(currentPage);
     } else {
+      if (data && data.requestId) {
+        alert('Không thể thực hiện thao tác. Mã tra cứu: ' + data.requestId);
+        return;
+      }
       const errorMsg = data.message || data.error || 'Không thể xóa sản phẩm này.';
       const suggestMsg = data.suggest || 'Chuyển trạng thái sang "Ngừng kinh doanh"';
 
@@ -406,7 +424,7 @@ async function saveProduct() {
     } else {
       let data = {};
       try { data = await res.json(); } catch (e) {}
-      showError(data.error || 'Lỗi lưu sản phẩm');
+      showError(window.formatApiError(data, 'Lỗi lưu sản phẩm'));
     }
   } catch (err) {
     showError('Lỗi kết nối máy chủ');

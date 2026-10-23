@@ -1,0 +1,133 @@
+{
+  "step": 3,
+  "timestamp": "2026-10-14T14:50:16.190Z",
+  "health": {
+    "status": 200,
+    "data": {
+      "database": "ok",
+      "version": "11.5.2",
+      "commit": "598e0338d5374d6bc404b02a58094132c5eeceb8"
+    }
+  },
+  "panel_3_match": true,
+  "panel_4_match": true,
+  "panel_3": {
+    "id": 3,
+    "title": "Tỷ lệ lỗi HTTP 5xx (%)",
+    "expr": "((sum(rate(http_requests_total{job=\"pos_store\", status_code=~\"5..\"}[1m])) or (sum(rate(http_requests_total{job=\"pos_store\"}[1m])) * 0)) / (sum(rate(http_requests_total{job=\"pos_store\"}[1m])) > 0)) * 100",
+    "noValue": "Chưa có dữ liệu",
+    "mappings": [
+      {
+        "options": {
+          "match": "null+nan",
+          "result": {
+            "color": "#808080",
+            "text": "Chưa có dữ liệu"
+          }
+        },
+        "type": "special"
+      },
+      {
+        "options": {
+          "match": "null",
+          "result": {
+            "color": "#808080",
+            "text": "Chưa có dữ liệu"
+          }
+        },
+        "type": "special"
+      },
+      {
+        "options": {
+          "match": "nan",
+          "result": {
+            "color": "#808080",
+            "text": "Chưa có dữ liệu"
+          }
+        },
+        "type": "special"
+      },
+      {
+        "options": {
+          "match": "empty",
+          "result": {
+            "color": "#808080",
+            "text": "Chưa có dữ liệu"
+          }
+        },
+        "type": "special"
+      }
+    ],
+    "thresholds": {
+      "mode": "absolute",
+      "steps": [
+        {
+          "color": "#808080",
+          "value": null
+        },
+        {
+          "color": "green",
+          "value": 0
+        },
+        {
+          "color": "yellow",
+          "value": 1
+        },
+        {
+          "color": "red",
+          "value": 5
+        }
+      ]
+    }
+  },
+  "panel_4": {
+    "id": 4,
+    "title": "Tỷ lệ yêu cầu hoàn thành <= 2s (%)",
+    "expr": "(sum(rate(http_request_duration_seconds_bucket{job=\"pos_store\", le=~\"2|2[.]0\"}[1m])) / (sum(rate(http_request_duration_seconds_count{job=\"pos_store\"}[1m])) > 0)) * 100",
+    "noValue": "Chưa có dữ liệu",
+    "mappings": [
+      {
+        "options": {
+          "match": "null+nan",
+          "result": {
+            "color": "#808080",
+            "text": "Chưa có dữ liệu"
+          }
+        },
+        "type": "special"
+      },
+      {
+        "options": {
+          "match": "empty",
+          "result": {
+            "color": "#808080",
+            "text": "Chưa có dữ liệu"
+          }
+        },
+        "type": "special"
+      }
+    ],
+    "thresholds": {
+      "mode": "absolute",
+      "steps": [
+        {
+          "color": "#808080",
+          "value": null
+        },
+        {
+          "color": "red",
+          "value": 0
+        },
+        {
+          "color": "yellow",
+          "value": 90
+        },
+        {
+          "color": "green",
+          "value": 95
+        }
+      ]
+    }
+  },
+  "overall_result": "PASS"
+}

@@ -49,6 +49,17 @@ function closeInvoiceModal() {
   document.body.classList.remove('modal-open');
 }
 
+// Escape ký tự đặc biệt phòng chống tấn công XSS khi hiển thị HTML
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // Định dạng ngày giờ theo đúng múi giờ Asia/Ho_Chi_Minh
 function formatDateTimeVN(dateVal) {
   if (!dateVal) return 'Không rõ';
@@ -101,6 +112,26 @@ function renderReceiptHtml(inv, items) {
     });
   }
 
+  let paymentMethodStr = 'Chưa ghi nhận';
+  let transferDetailsHtml = '';
+  if (inv.payment_method === 'CASH') {
+    paymentMethodStr = 'Tiền mặt';
+  } else if (inv.payment_method === 'BANK_TRANSFER') {
+    paymentMethodStr = 'Chuyển khoản QR';
+    const confirmedTime = inv.transfer_confirmed_at ? formatDateTimeVN(inv.transfer_confirmed_at) : 'N/A';
+    const escapedContent = escapeHtml(inv.transfer_content || 'N/A');
+    transferDetailsHtml = `
+      <div class="row g-2 mb-2 p-2 bg-light rounded border text-start small">
+        <div class="col-sm-6">
+          <strong>Nội dung chuyển khoản:</strong> <span class="font-monospace text-primary fw-bold">${escapedContent}</span>
+        </div>
+        <div class="col-sm-6 text-sm-end text-muted">
+          <span>Xác nhận lúc: <strong>${confirmedTime}</strong> (Thủ công)</span>
+        </div>
+      </div>
+    `;
+  }
+
   return `
     <div class="invoice-receipt-wrapper">
       <div class="text-center mb-4 pb-2 border-bottom">
@@ -116,9 +147,10 @@ function renderReceiptHtml(inv, items) {
         </div>
         <div class="col-sm-6 text-sm-end">
           <p class="mb-1"><strong>Ngày lập:</strong> <span>${dateStr}</span></p>
-          <p class="mb-1"><strong>Phương thức:</strong> <span>Tiền mặt</span></p>
+          <p class="mb-1"><strong>Phương thức:</strong> <span class="fw-semibold">${paymentMethodStr}</span></p>
         </div>
       </div>
+      ${transferDetailsHtml}
 
       <div class="table-responsive mb-3">
         <table class="table table-bordered table-sm align-middle mb-0">
@@ -139,7 +171,7 @@ function renderReceiptHtml(inv, items) {
           <tfoot class="table-light">
             <tr>
               <th colspan="6" class="text-end fw-bold">Tổng cộng tiền thanh toán:</th>
-              <th class="text-end fw-bold text-danger fs-6">${totalAmountStr}</th>
+              <th class="text-end fw-bold text-dark fs-6">${totalAmountStr}</th>
             </tr>
           </tfoot>
         </table>
@@ -321,7 +353,7 @@ async function loadInvoices(page = 1) {
   if (tbody && !previousTbodyHtml.trim()) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="text-center py-4 text-muted">
+        <td colspan="7" class="text-center py-4 text-muted">
           <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
           Đang tải danh sách hóa đơn...
         </td>
@@ -372,7 +404,7 @@ async function loadInvoices(page = 1) {
     if (invoices.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" class="text-center text-muted py-5">
+          <td colspan="7" class="text-center text-muted py-5">
             <div class="d-flex flex-column align-items-center">
               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-inbox text-secondary mb-2" viewBox="0 0 16 16">
                 <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 8h4.46l-3.05-3.812A.5.5 0 0 0 11.02 4H4.98zm-1.17-.437A1.5 1.5 0 0 1 4.98 3h6.04a1.5 1.5 0 0 1 1.17.563l3.7 4.625a1 1 0 0 1 .11.45V13a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8.638a1 1 0 0 1 .11-.45l3.7-4.625zM1 9.5v3.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5h-3.72a2.5 2.5 0 0 1-4.56 0H1z"/>
@@ -394,14 +426,26 @@ async function loadInvoices(page = 1) {
       const dateStr = formatDateTimeVN(inv.created_at);
       const amountStr = Number(inv.total_amount).toLocaleString('vi-VN') + ' đ';
 
+      let pmBadge = '<span class="badge bg-secondary">Chưa ghi nhận</span>';
+      if (inv.payment_method === 'CASH') {
+        pmBadge = '<span class="badge bg-success">Tiền mặt</span>';
+      } else if (inv.payment_method === 'BANK_TRANSFER') {
+        const escapedContent = escapeHtml(inv.transfer_content || '');
+        const tooltip = escapedContent ? `Nội dung: ${escapedContent}` : 'Chuyển khoản QR';
+        pmBadge = `<span class="badge bg-info text-dark" title="${tooltip}">Chuyển khoản QR</span>`;
+      }
+
       tr.innerHTML = `
         <td class="text-center">${inv.id}</td>
-        <td class="fw-bold text-primary">${inv.invoice_no}</td>
-        <td class="text-end fw-bold text-danger">${amountStr}</td>
+        <td class="fw-bold text-primary font-monospace">${inv.invoice_no}</td>
+        <td class="text-end fw-bold text-dark font-monospace">${amountStr}</td>
+        <td class="text-center">${pmBadge}</td>
         <td>${dateStr}</td>
         <td>${inv.created_by_name || 'Hệ thống'}</td>
         <td class="text-center">
-          <button type="button" class="btn btn-sm btn-info text-white" onclick="viewDetails(${inv.id})">Chi tiết</button>
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewDetails(${inv.id})">
+            <i class="bi bi-eye me-1"></i>Chi tiết
+          </button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -419,7 +463,7 @@ async function loadInvoices(page = 1) {
 
   } catch (err) {
     console.error('Lỗi tải danh sách hóa đơn:', err);
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Lỗi kết nối khi tải danh sách hóa đơn</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Lỗi kết nối khi tải danh sách hóa đơn</td></tr>';
   }
 }
 
@@ -506,10 +550,10 @@ async function viewDetails(id) {
       let errMsg = `Không thể tải chi tiết hóa đơn (Mã lỗi: ${res ? res.status : 'Mất kết nối'})`;
       try {
         const errJson = await res.json();
-        if (errJson.error) errMsg = errJson.error;
+        errMsg = window.formatApiError(errJson, errMsg);
       } catch (e) {}
       if (previewArea) {
-        previewArea.innerHTML = `<div class="alert alert-danger mb-0">${errMsg}</div>`;
+        previewArea.innerHTML = `<div class="alert alert-danger mb-0">${escapeHtml(errMsg)}</div>`;
       }
       alert(errMsg);
       return;

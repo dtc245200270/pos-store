@@ -57,7 +57,7 @@ async function run() {
   // 2. Khởi động server test trên port TEST_PORT
   console.log(`1. Khởi động server kiểm thử trên cổng ${TEST_PORT}...`);
   const serverProcess = spawn('node', ['server.js'], {
-    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_inv_secret_123', PORT: String(TEST_PORT) }
+    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_inv_secret_123', PORT: String(TEST_PORT), METRICS_PORT: '0' }
   });
 
   await new Promise((resolve) => {

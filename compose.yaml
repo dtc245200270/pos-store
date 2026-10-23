@@ -1,0 +1,247 @@
+services:
+  # 1. Co so du lieu MySQL 8.0
+  mysql:
+    image: mysql:8.0.40
+    container_name: pos-store-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=caching_sha2_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password_123}
+      MYSQL_DATABASE: ${DB_NAME:-pos_store}
+      MYSQL_USER: ${DB_USER:-pos_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-290729}
+    ports:
+      # Anh xa sang 3307 tren localhost de tranh xung dot voi MySQL service tren Windows (port 3306)
+      - "127.0.0.1:${HOST_MYSQL_PORT:-3307}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/backups/pos_store_backup.sql:/docker-entrypoint-initdb.d/01_pos_store_backup.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD:-root_password_123} || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - pos_net
+
+  # 2. Ung dung Node.js / Express
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: pos-store-app:1.0.0
+    container_name: pos-store-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      METRICS_PORT: 9101
+      METRICS_HOST: 0.0.0.0
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-pos_store}
+      DB_USER: ${DB_USER:-pos_app}
+      DB_PASSWORD: ${DB_PASSWORD:-290729}
+      SESSION_SECRET: ${SESSION_SECRET:-my-very-secret-key-123}
+      INITIAL_MANAGER_PASSWORD: ${INITIAL_MANAGER_PASSWORD:-29072907}
+      VIETQR_BANK_ID: ${VIETQR_BANK_ID:-970415}
+      VIETQR_BANK_NAME: ${VIETQR_BANK_NAME:-VietinBank}
+      VIETQR_ACCOUNT_NO: ${VIETQR_ACCOUNT_NO:-107879830637}
+      VIETQR_ACCOUNT_NAME: ${VIETQR_ACCOUNT_NAME:-DINH XUAN MANH}
+    ports:
+      - "127.0.0.1:${HOST_APP_PORT:-3000}:3000"
+      - "127.0.0.1:${HOST_METRICS_PORT:-9101}:9101"
+    volumes:
+      - app_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/login"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - pos_net
+
+  # 3. Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.27.2-alpine
+    container_name: pos-store-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${HOST_NGINX_PORT:-8080}:80"
+    volumes:
+      - ./deploy/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - nginx_logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1/login || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 3s
+    networks:
+      - pos_net
+
+  # 4. phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin:5.2.1
+    container_name: pos-store-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 50M
+    ports:
+      - "127.0.0.1:${HOST_PMA_PORT:-8081}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - pos_net
+
+  # 5. Prometheus
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: pos-store-prometheus
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "127.0.0.1:${HOST_PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./deploy/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9090/-/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - pos_net
+
+  # 6. Grafana Loki
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: pos-store-loki
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "127.0.0.1:${HOST_LOKI_PORT:-3100}:3100"
+    volumes:
+      - ./deploy/docker/loki/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3100/ready || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - pos_net
+
+  # 7. Grafana
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: pos-store-grafana
+    restart: unless-stopped
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "127.0.0.1:${HOST_GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/docker/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./deploy/docker/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deploy/docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - pos_net
+
+  # 8. Grafana Alloy
+  alloy:
+    image: grafana/alloy:v1.4.3
+    container_name: pos-store-alloy
+    restart: unless-stopped
+    depends_on:
+      loki:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+      nginx:
+        condition: service_healthy
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports:
+      - "127.0.0.1:${HOST_ALLOY_PORT:-12345}:12345"
+    volumes:
+      - ./deploy/docker/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - app_logs:/var/log/app:ro
+      - nginx_logs:/var/log/nginx:ro
+      - alloy_data:/var/lib/alloy/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/12345; printf \"GET /-/ready HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n\" >&3; cat <&3 | grep -q \"200 OK\"' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - pos_net
+
+volumes:
+  mysql_data:
+    name: pos_store_mysql_data
+  prometheus_data:
+    name: pos_store_prometheus_data
+  grafana_data:
+    name: pos_store_grafana_data
+  loki_data:
+    name: pos_store_loki_data
+  alloy_data:
+    name: pos_store_alloy_data
+  app_logs:
+    name: pos_store_app_logs
+  nginx_logs:
+    name: pos_store_nginx_logs
+
+networks:
+  pos_net:
+    name: pos_store_network
+    driver: bridge

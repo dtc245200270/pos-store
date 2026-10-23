@@ -1,13 +1,87 @@
 let allEmployees = [];
+let tableDropdownInstances = [];
 
 function closeModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.style.display = 'none';
+  const modalEl = typeof id === 'string' ? document.getElementById(id) : id;
+  if (!modalEl) return;
+  if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (instance._isTransitioning) {
+      modalEl.addEventListener('shown.bs.modal', () => {
+        try { instance.hide(); } catch (e) {}
+      }, { once: true });
+      return;
+    }
+    instance.hide();
+  } else {
+    modalEl.style.display = 'none';
+  }
 }
 
 function showModal(id) {
-  const modal = document.getElementById(id);
-  if (modal) modal.style.display = 'block';
+  const modalEl = typeof id === 'string' ? document.getElementById(id) : id;
+  if (!modalEl) return;
+  if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    const instance = bootstrap.Modal.getOrCreateInstance(modalEl);
+    if (instance._isTransitioning) {
+      modalEl.addEventListener('hidden.bs.modal', () => {
+        try { instance.show(); } catch (e) {}
+      }, { once: true });
+      return;
+    }
+    instance.show();
+  } else {
+    modalEl.style.display = 'block';
+  }
+}
+
+// Dọn dẹp các Bootstrap Dropdown cũ trong bảng để giải phóng bộ nhớ và tránh lỗi Popper
+function disposeTableDropdowns() {
+  if (Array.isArray(tableDropdownInstances)) {
+    tableDropdownInstances.forEach(instance => {
+      try {
+        if (instance && typeof instance.dispose === 'function') {
+          instance.dispose();
+        }
+      } catch (err) {}
+    });
+  }
+  tableDropdownInstances = [];
+
+  const toggles = document.querySelectorAll('#employees-table [data-bs-toggle="dropdown"]');
+  toggles.forEach(btn => {
+    try {
+      if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+        const inst = bootstrap.Dropdown.getInstance(btn);
+        if (inst && typeof inst.dispose === 'function') {
+          inst.dispose();
+        }
+      }
+    } catch (e) {}
+  });
+}
+
+// Khởi tạo Bootstrap Dropdown với Popper strategy fixed và boundary viewport để không bị cắt trong .table-responsive
+function initTableDropdowns() {
+  disposeTableDropdowns();
+  if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) return;
+
+  const toggles = document.querySelectorAll('#employees-table [data-bs-toggle="dropdown"]');
+  toggles.forEach(btn => {
+    try {
+      const instance = new bootstrap.Dropdown(btn, {
+        boundary: 'viewport',
+        popperConfig: function(defaultConfig) {
+          const cfg = (typeof defaultConfig === 'object' && defaultConfig) ? { ...defaultConfig } : {};
+          cfg.strategy = 'fixed';
+          return cfg;
+        }
+      });
+      tableDropdownInstances.push(instance);
+    } catch (err) {
+      console.warn('Lỗi khởi tạo dropdown:', err);
+    }
+  });
 }
 
 // 1. Mở Modal Thêm Thu Ngân Mới
@@ -19,8 +93,10 @@ function showAddEmployeeModal() {
   document.getElementById('add-e-confirm-password').value = '';
   
   const errDiv = document.getElementById('add-e-error');
-  errDiv.textContent = '';
-  errDiv.classList.add('d-none');
+  if (errDiv) {
+    errDiv.textContent = '';
+    errDiv.classList.add('d-none');
+  }
 
   showModal('add-employee-modal');
 }
@@ -36,8 +112,10 @@ function showEditEmployeeModal(id) {
   document.getElementById('edit-e-role').value = emp.role;
 
   const errDiv = document.getElementById('edit-e-error');
-  errDiv.textContent = '';
-  errDiv.classList.add('d-none');
+  if (errDiv) {
+    errDiv.textContent = '';
+    errDiv.classList.add('d-none');
+  }
 
   showModal('edit-employee-modal');
 }
@@ -53,8 +131,10 @@ function showResetPassModal(id) {
   document.getElementById('rp-confirm-password').value = '';
 
   const errDiv = document.getElementById('rp-error');
-  errDiv.textContent = '';
-  errDiv.classList.add('d-none');
+  if (errDiv) {
+    errDiv.textContent = '';
+    errDiv.classList.add('d-none');
+  }
 
   showModal('reset-pass-modal');
 }
@@ -64,7 +144,9 @@ async function loadEmployees() {
   try {
     const res = await window.apiFetch('/api/employees');
     if (!res || !res.ok) {
-      alert('Không thể tải danh sách tài khoản nhân viên');
+      let data = {};
+      try { data = await res.json(); } catch (e) {}
+      alert(window.formatApiError(data, 'Không thể tải danh sách tài khoản nhân viên'));
       return;
     }
     const data = await res.json();
@@ -99,6 +181,8 @@ function filterAndRenderEmployees() {
 
 // 6. Render dữ liệu ra bảng
 function renderEmployeeTable(employees) {
+  disposeTableDropdowns();
+
   const tbody = document.querySelector('#employees-table tbody');
   if (!tbody) return;
   tbody.innerHTML = '';
@@ -119,32 +203,50 @@ function renderEmployeeTable(employees) {
       ? `<span class="badge bg-success">Hoạt động</span>`
       : `<span class="badge bg-secondary">Đã khóa</span>`;
 
-    const lockBtnText = e.is_active ? 'Khóa' : 'Mở Khóa';
-    const lockBtnClass = e.is_active ? 'btn-warning' : 'btn-success';
+    const lockActionLabel = e.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản';
+    const lockActionIcon = e.is_active ? 'bi-lock me-2 text-warning' : 'bi-unlock me-2 text-success';
     const nextStatus = !e.is_active;
 
     tr.innerHTML = `
-      <td class="ps-3 fw-semibold">${escapeHtml(e.username)}</td>
-      <td>${escapeHtml(e.full_name)}</td>
+      <td class="ps-3 fw-semibold font-monospace">${escapeHtml(e.username)}</td>
+      <td class="fw-medium">${escapeHtml(e.full_name)}</td>
       <td>${roleBadge}</td>
       <td>${statusBadge}</td>
       <td class="text-end pe-3">
-        <button class="btn btn-sm btn-info text-white me-1" onclick="showEditEmployeeModal(${e.id})">
-          <i class="bi bi-pencil me-1"></i>Sửa
-        </button>
-        <button class="btn btn-sm btn-secondary me-1" onclick="showResetPassModal(${e.id})">
-          <i class="bi bi-key me-1"></i>Đổi MK
-        </button>
-        <button class="btn btn-sm ${lockBtnClass} me-1" onclick="toggleLock(${e.id}, ${nextStatus}, '${escapeHtml(e.username)}')">
-          ${lockBtnText}
-        </button>
-        <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(${e.id}, '${escapeHtml(e.username)}')">
-          <i class="bi bi-trash"></i>
-        </button>
+        <div class="d-flex justify-content-end align-items-center gap-1">
+          <button class="btn btn-sm btn-outline-primary" onclick="showEditEmployeeModal(${e.id})" title="Sửa thông tin nhân viên">
+            <i class="bi bi-pencil me-1"></i>Sửa
+          </button>
+          <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" title="Thao tác khác">
+              Thao tác
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li>
+                <button class="dropdown-item py-2" type="button" onclick="showResetPassModal(${e.id})">
+                  <i class="bi bi-key me-2 text-warning"></i>Đặt lại mật khẩu
+                </button>
+              </li>
+              <li>
+                <button class="dropdown-item py-2" type="button" onclick="toggleLock(${e.id}, ${nextStatus}, '${escapeHtml(e.username)}')">
+                  <i class="bi ${lockActionIcon}"></i>${lockActionLabel}
+                </button>
+              </li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li>
+                <button class="dropdown-item py-2 text-danger" type="button" onclick="deleteEmployee(${e.id}, '${escapeHtml(e.username)}')">
+                  <i class="bi bi-trash me-2"></i>Xóa tài khoản
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  initTableDropdowns();
 }
 
 // 7. Gửi form Thêm Thu Ngân
@@ -193,7 +295,7 @@ async function submitAddEmployee() {
       closeModal('add-employee-modal');
       await loadEmployees();
     } else {
-      errDiv.textContent = data.error || 'Lỗi tạo tài khoản nhân viên.';
+      errDiv.textContent = window.formatApiError(data, 'Lỗi tạo tài khoản nhân viên.');
       errDiv.classList.remove('d-none');
     }
   } catch (err) {
@@ -235,7 +337,7 @@ async function submitEditEmployee() {
       closeModal('edit-employee-modal');
       await loadEmployees();
     } else {
-      errDiv.textContent = data.error || 'Lỗi cập nhật tài khoản.';
+      errDiv.textContent = window.formatApiError(data, 'Lỗi cập nhật tài khoản.');
       errDiv.classList.remove('d-none');
     }
   } catch (err) {
@@ -280,9 +382,11 @@ async function submitResetPassword() {
     const data = await res.json();
     if (res && res.ok) {
       closeModal('reset-pass-modal');
-      alert('Đã đặt lại mật khẩu thành công.');
+      setTimeout(() => {
+        alert('Đã đặt lại mật khẩu thành công.');
+      }, 150);
     } else {
-      errDiv.textContent = data.error || 'Lỗi đặt lại mật khẩu.';
+      errDiv.textContent = window.formatApiError(data, 'Lỗi đặt lại mật khẩu.');
       errDiv.classList.remove('d-none');
     }
   } catch (err) {
@@ -309,7 +413,7 @@ async function toggleLock(id, nextStatus, username) {
     if (res && res.ok) {
       await loadEmployees();
     } else {
-      alert(data.error || `Lỗi ${actionText} tài khoản`);
+      alert(window.formatApiError(data, `Lỗi ${actionText} tài khoản`));
     }
   } catch (err) {
     alert('Lỗi kết nối máy chủ');
@@ -331,7 +435,7 @@ async function deleteEmployee(id, username) {
       alert('Xóa tài khoản thành công.');
       await loadEmployees();
     } else {
-      alert(data.error || 'Lỗi xóa tài khoản');
+      alert(window.formatApiError(data, 'Lỗi xóa tài khoản'));
     }
   } catch (err) {
     alert('Lỗi kết nối máy chủ');
@@ -363,4 +467,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (statusFilter) {
     statusFilter.addEventListener('change', filterAndRenderEmployees);
   }
+
+  // Lắng nghe sự kiện đóng modal để xóa thông báo lỗi cũ và đảm bảo không sót backdrop
+  ['add-employee-modal', 'edit-employee-modal', 'reset-pass-modal'].forEach(modalId => {
+    const modalEl = document.getElementById(modalId);
+    if (modalEl) {
+      modalEl.addEventListener('hidden.bs.modal', () => {
+        const errDiv = modalEl.querySelector('.alert-danger');
+        if (errDiv) {
+          errDiv.textContent = '';
+          errDiv.classList.add('d-none');
+        }
+        const activeModals = document.querySelectorAll('.modal.show');
+        if (activeModals.length === 0) {
+          document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('overflow');
+          document.body.style.removeProperty('padding-right');
+        }
+      });
+    }
+  });
 });

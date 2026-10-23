@@ -44,6 +44,8 @@ async function initUserRole() {
       if (currentUserRole === 'MANAGER') {
         roleBadge.className = 'badge bg-primary';
         roleBadge.innerHTML = '<i class="bi bi-shield-check me-1"></i>Quản lý';
+        const btnAllHistory = document.getElementById('btn-view-all-history');
+        if (btnAllHistory) btnAllHistory.classList.remove('d-none');
       } else if (currentUserRole === 'CASHIER') {
         roleBadge.className = 'badge bg-secondary';
         roleBadge.innerHTML = '<i class="bi bi-person me-1"></i>Thu ngân (Chỉ tra cứu)';
@@ -115,12 +117,20 @@ async function loadInventory() {
   try {
     const res = await window.apiFetch('/api/inventory?' + params.toString());
     if (!res || !res.ok) {
-      throw new Error(`Máy chủ phản hồi mã lỗi ${res ? res.status : 'không xác định'}`);
+      let errMsg = `Máy chủ phản hồi mã lỗi ${res ? res.status : 'không xác định'}`;
+      try {
+        const errJson = await res.json();
+        errMsg = window.formatApiError(errJson, errMsg);
+      } catch (e) {}
+      throw new Error(errMsg);
     }
 
     const data = await res.json();
     currentInventory = data.products || (Array.isArray(data) ? data : []);
     currentThreshold = typeof data.threshold === 'number' ? data.threshold : threshold;
+
+    // Cập nhật danh sách sản phẩm vào dropdown trong modal lịch sử
+    updateHistoryProductOptions(currentInventory);
 
     // Cập nhật nhãn ngưỡng
     const label = document.getElementById('current-threshold-label');
@@ -184,16 +194,16 @@ function renderInventoryTable(products) {
     // Xác định badge màu cảnh báo theo số lượng tồn
     let stockBadgeHtml = '';
     if (stock === 0) {
-      stockBadgeHtml = `<span class="badge bg-danger badge-stock"><i class="bi bi-x-circle-fill me-1"></i>0 ${escapeHtml(p.unit)} (Hết hàng)</span>`;
+      stockBadgeHtml = `<span class="badge bg-danger"><i class="bi bi-x-circle-fill me-1"></i>0 ${escapeHtml(p.unit)} (Hết hàng)</span>`;
     } else if (stock <= currentThreshold) {
-      stockBadgeHtml = `<span class="badge bg-warning text-dark badge-stock"><i class="bi bi-exclamation-triangle-fill me-1"></i>${stock} ${escapeHtml(p.unit)} (Sắp hết)</span>`;
+      stockBadgeHtml = `<span class="badge bg-warning"><i class="bi bi-exclamation-triangle-fill me-1"></i>${stock} ${escapeHtml(p.unit)} (Sắp hết)</span>`;
     } else {
-      stockBadgeHtml = `<span class="badge bg-success badge-stock"><i class="bi bi-check-circle-fill me-1"></i>${stock} ${escapeHtml(p.unit)}</span>`;
+      stockBadgeHtml = `<span class="badge bg-success"><i class="bi bi-check-circle-fill me-1"></i>${stock} ${escapeHtml(p.unit)} (Còn hàng)</span>`;
     }
 
     // Trạng thái kinh doanh
     const statusBadge = p.is_active
-      ? '<span class="badge bg-success bg-opacity-75">Đang kinh doanh</span>'
+      ? '<span class="badge bg-success">Đang kinh doanh</span>'
       : '<span class="badge bg-secondary">Ngừng kinh doanh</span>';
 
     // Thao tác: Chỉ Quản lý mới có nút xem Lịch sử biến động
@@ -206,7 +216,7 @@ function renderInventoryTable(products) {
       `;
     } else {
       actionHtml = `
-        <span class="badge bg-light text-muted border py-1 px-2" title="Chỉ Quản lý mới có quyền xem lịch sử chứng từ">
+        <span class="badge bg-secondary" title="Chỉ Quản lý mới có quyền xem lịch sử chứng từ">
           <i class="bi bi-lock me-1"></i> Chỉ tra cứu
         </span>
       `;
@@ -214,7 +224,7 @@ function renderInventoryTable(products) {
 
     tr.innerHTML = `
       <td class="text-center text-muted">${idx + 1}</td>
-      <td><span class="badge bg-secondary font-monospace">${escapeHtml(p.sku)}</span></td>
+      <td><span class="fw-semibold text-primary font-monospace">${escapeHtml(p.sku)}</span></td>
       <td class="fw-semibold text-dark">${escapeHtml(p.name)}</td>
       <td class="text-center text-muted">${escapeHtml(p.unit)}</td>
       <td class="text-center">${stockBadgeHtml}</td>
@@ -228,6 +238,53 @@ function renderInventoryTable(products) {
 // ----------------------------------------------------------------------------
 // MODAL LỊCH SỬ BIẾN ĐỘNG KHO (DÀNH CHO QUẢN LÝ)
 // ----------------------------------------------------------------------------
+let currentHistoryProductId = null; // null: Toàn bộ kho; Number: ID sản phẩm cụ thể
+
+// Kiểm tra ngày hợp lệ theo dương lịch thực tế (YYYY-MM-DD), chặn các ngày không tồn tại và hỗ trợ năm nhuận
+function isValidCalendarDate(dateStr) {
+  if (typeof dateStr !== 'string') return false;
+  const match = dateStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const day = parseInt(match[3], 10);
+  if (year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const d = new Date(year, month - 1, day);
+  return (d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day);
+}
+
+function showHistoryFilterError(msg) {
+  const errorEl = document.getElementById('history-filter-error');
+  const errorText = document.getElementById('history-filter-error-text');
+  if (errorEl && errorText) {
+    errorText.textContent = msg;
+    errorEl.classList.remove('d-none');
+  }
+}
+
+function clearHistoryFilterError() {
+  const errorEl = document.getElementById('history-filter-error');
+  const errorText = document.getElementById('history-filter-error-text');
+  if (errorEl && errorText) {
+    errorText.textContent = '';
+    errorEl.classList.add('d-none');
+  }
+}
+
+function updateHistoryProductOptions(products) {
+  const sel = document.getElementById('history-product-select');
+  if (!sel) return;
+  const currentVal = sel.value;
+  sel.innerHTML = '<option value="">-- Tất cả sản phẩm (Toàn bộ kho) --</option>';
+  (products || []).forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = String(p.id);
+    opt.textContent = `[${p.sku}] ${p.name}`;
+    sel.appendChild(opt);
+  });
+  sel.value = currentVal;
+}
+
 function openHistoryModal() {
   const modalEl = document.getElementById('history-modal');
   if (modalEl) {
@@ -244,14 +301,101 @@ function closeHistoryModal() {
   }
 }
 
-async function viewHistory(productId) {
-  // Kiểm tra quyền phía Client
-  if (currentUserRole !== 'MANAGER') {
-    alert('Bị từ chối truy cập: Thu ngân (CASHIER) chỉ được phép tra cứu tồn kho, không có quyền xem lịch sử chứa chứng từ của người khác.');
+function onHistoryProductChange() {
+  const sel = document.getElementById('history-product-select');
+  const val = sel ? sel.value : '';
+  currentHistoryProductId = val ? parseInt(val, 10) : null;
+  clearHistoryFilterError();
+  loadCurrentHistory();
+}
+
+function applyHistoryFilter() {
+  const fromDate = document.getElementById('history-from-date')?.value?.trim() || '';
+  const toDate = document.getElementById('history-to-date')?.value?.trim() || '';
+
+  // Kiểm tra ngày hợp lệ ở client
+  if (fromDate && !isValidCalendarDate(fromDate)) {
+    showHistoryFilterError('Định dạng Từ ngày không hợp lệ hoặc không tồn tại trên lịch.');
     return;
   }
 
+  if (toDate && !isValidCalendarDate(toDate)) {
+    showHistoryFilterError('Định dạng Đến ngày không hợp lệ hoặc không tồn tại trên lịch.');
+    return;
+  }
+
+  if (fromDate && toDate && fromDate > toDate) {
+    showHistoryFilterError('Từ ngày không được lớn hơn Đến ngày.');
+    return;
+  }
+
+  clearHistoryFilterError();
+  loadCurrentHistory();
+}
+
+function resetHistoryFilter() {
+  clearHistoryFilterError();
+
+  const fromInput = document.getElementById('history-from-date');
+  const toInput = document.getElementById('history-to-date');
+  const searchInput = document.getElementById('history-search-input');
+
+  if (fromInput) fromInput.value = '';
+  if (toInput) toInput.value = '';
+  if (searchInput) searchInput.value = '';
+
+  // Quy tắc nghiệp vụ: Đặt lại xóa điều kiện lọc nhưng KHÔNG làm mất sản phẩm đang xem
+  loadCurrentHistory();
+}
+
+async function viewHistory(productId) {
+  if (currentUserRole !== 'MANAGER') {
+    alert('Bị từ chối truy cập: Thu ngân (CASHIER) chỉ được phép tra cứu tồn kho, không có quyền xem lịch sử biến động kho.');
+    return;
+  }
+
+  currentHistoryProductId = productId ? parseInt(productId, 10) : null;
+  const sel = document.getElementById('history-product-select');
+  if (sel) sel.value = currentHistoryProductId ? String(currentHistoryProductId) : '';
+
+  const fromInput = document.getElementById('history-from-date');
+  const toInput = document.getElementById('history-to-date');
+  const searchInput = document.getElementById('history-search-input');
+  if (fromInput) fromInput.value = '';
+  if (toInput) toInput.value = '';
+  if (searchInput) searchInput.value = '';
+  clearHistoryFilterError();
+
+  openHistoryModal();
+  await loadCurrentHistory();
+}
+
+async function viewAllHistory() {
+  if (currentUserRole !== 'MANAGER') {
+    alert('Bị từ chối truy cập: Thu ngân (CASHIER) chỉ được phép tra cứu tồn kho, không có quyền xem lịch sử biến động kho.');
+    return;
+  }
+
+  currentHistoryProductId = null;
+  const sel = document.getElementById('history-product-select');
+  if (sel) sel.value = '';
+
+  const fromInput = document.getElementById('history-from-date');
+  const toInput = document.getElementById('history-to-date');
+  const searchInput = document.getElementById('history-search-input');
+  if (fromInput) fromInput.value = '';
+  if (toInput) toInput.value = '';
+  if (searchInput) searchInput.value = '';
+  clearHistoryFilterError();
+
+  openHistoryModal();
+  await loadCurrentHistory();
+}
+
+async function loadCurrentHistory() {
   const modalTitle = document.getElementById('history-modal-title');
+  const modalProductSummary = document.getElementById('modal-product-summary');
+  const modalAllSummary = document.getElementById('modal-all-summary');
   const modalSku = document.getElementById('modal-sku');
   const modalName = document.getElementById('modal-name');
   const modalStock = document.getElementById('modal-stock');
@@ -260,52 +404,96 @@ async function viewHistory(productId) {
   const errorTextEl = document.getElementById('history-error-text');
   const tableContainer = document.getElementById('history-table-container');
   const emptyEl = document.getElementById('history-empty');
+  const emptyTextEl = document.getElementById('history-empty-text');
   const tbody = document.getElementById('history-tbody');
 
-  // Đặt trạng thái ban đầu của modal
+  // Đặt trạng thái đang tải
   if (loadingEl) loadingEl.classList.remove('d-none');
   if (errorEl) errorEl.classList.add('d-none');
   if (tableContainer) tableContainer.classList.add('d-none');
   if (emptyEl) emptyEl.classList.add('d-none');
   if (tbody) tbody.innerHTML = '';
 
-  if (modalTitle) modalTitle.innerHTML = `<i class="bi bi-clock-history me-2 text-info"></i>Đang tải lịch sử...`;
-  if (modalSku) modalSku.textContent = '-';
-  if (modalName) modalName.textContent = '-';
-  if (modalStock) modalStock.textContent = '-';
+  // Thu thập các tham số lọc
+  const fromDate = document.getElementById('history-from-date')?.value?.trim() || '';
+  const toDate = document.getElementById('history-to-date')?.value?.trim() || '';
+  const search = document.getElementById('history-search-input')?.value?.trim() || '';
 
-  openHistoryModal();
+  const params = new URLSearchParams();
+  if (fromDate) params.set('from_date', fromDate);
+  if (toDate) params.set('to_date', toDate);
+  if (search) params.set('q', search);
 
   try {
-    const res = await window.apiFetch(`/api/inventory/${productId}/movements`);
+    let url = '';
+    if (currentHistoryProductId) {
+      url = `/api/inventory/${currentHistoryProductId}/movements?` + params.toString();
+    } else {
+      params.set('limit', '200');
+      url = `/api/inventory/movements?` + params.toString();
+    }
+
+    const res = await window.apiFetch(url);
     if (!res || !res.ok) {
-      if (res && res.status === 403) {
+      let errMsg = 'Không thể tải lịch sử biến động kho.';
+      try {
+        const errJson = await res.json();
+        errMsg = window.formatApiError(errJson, errMsg);
+      } catch (e) {}
+
+      if (res && res.status === 400) {
+        showHistoryFilterError(errMsg);
+      } else if (res && res.status === 403) {
         throw new Error('Chỉ Quản lý (MANAGER) mới có quyền truy cập lịch sử biến động kho và chứng từ chi tiết.');
+      } else {
+        throw new Error(errMsg);
       }
-      throw new Error(`Lỗi máy chủ: ${res ? res.status : 'Không phản hồi'}`);
-    }
-
-    const data = await res.json();
-    const product = data.product || {};
-    const movements = data.movements || [];
-
-    // Cập nhật thông tin sản phẩm trên modal
-    if (modalTitle) {
-      modalTitle.innerHTML = `<i class="bi bi-clock-history me-2 text-info"></i>Lịch Sử Biến Động Kho: ${escapeHtml(product.name)} (${escapeHtml(product.sku)})`;
-    }
-    if (modalSku) modalSku.textContent = product.sku || 'N/A';
-    if (modalName) modalName.textContent = product.name || 'N/A';
-    if (modalStock) modalStock.textContent = `${product.stock_quantity} ${product.unit || ''}`;
-
-    if (loadingEl) loadingEl.classList.add('d-none');
-
-    // Nếu chưa có biến động nào
-    if (!movements || movements.length === 0) {
-      if (emptyEl) emptyEl.classList.remove('d-none');
       return;
     }
 
-    // Render bảng biến động kho
+    const data = await res.json();
+    let movements = [];
+
+    if (currentHistoryProductId) {
+      const product = data.product || {};
+      movements = data.movements || [];
+
+      if (modalProductSummary) modalProductSummary.classList.remove('d-none');
+      if (modalAllSummary) modalAllSummary.classList.add('d-none');
+
+      if (modalTitle) {
+        modalTitle.innerHTML = `<i class="bi bi-clock-history me-2 text-info"></i>Lịch Sử Biến Động Kho: ${escapeHtml(product.name || '')} (${escapeHtml(product.sku || '')})`;
+      }
+      if (modalSku) modalSku.textContent = product.sku || 'N/A';
+      if (modalName) modalName.textContent = product.name || 'N/A';
+      if (modalStock) modalStock.textContent = `${product.stock_quantity ?? '-'} ${product.unit || ''}`;
+    } else {
+      movements = Array.isArray(data) ? data : (data.movements || []);
+
+      if (modalProductSummary) modalProductSummary.classList.add('d-none');
+      if (modalAllSummary) modalAllSummary.classList.remove('d-none');
+
+      if (modalTitle) {
+        modalTitle.innerHTML = `<i class="bi bi-clock-history me-2 text-info"></i>Lịch Sử Biến Động Toàn Bộ Kho`;
+      }
+    }
+
+    if (loadingEl) loadingEl.classList.add('d-none');
+
+    // Nếu không có kết quả
+    if (!movements || movements.length === 0) {
+      if (emptyEl) {
+        if (emptyTextEl) {
+          emptyTextEl.textContent = fromDate || toDate || search
+            ? 'Không tìm thấy biến động kho nào phù hợp với điều kiện lọc.'
+            : (currentHistoryProductId ? 'Sản phẩm này chưa phát sinh biến động kho nào.' : 'Kho hàng chưa có ghi nhận biến động nào.');
+        }
+        emptyEl.classList.remove('d-none');
+      }
+      return;
+    }
+
+    // Render bảng biến động
     if (tbody) {
       tbody.innerHTML = '';
       movements.forEach((m, idx) => {
@@ -313,25 +501,26 @@ async function viewHistory(productId) {
         const delta = Number(m.quantity_delta);
         const isImport = delta > 0;
 
-        // Loại biến động
         const typeBadge = isImport
           ? '<span class="badge bg-success bg-opacity-75"><i class="bi bi-box-arrow-in-down me-1"></i>Nhập kho</span>'
           : '<span class="badge bg-danger bg-opacity-75"><i class="bi bi-cart-check me-1"></i>Xuất bán</span>';
 
-        // Biến động số lượng có dấu (+ / -)
         const deltaFormatted = isImport
           ? `<span class="text-success fw-bold font-monospace fs-6">+${delta}</span>`
           : `<span class="text-danger fw-bold font-monospace fs-6">${delta}</span>`;
 
-        // Thời gian chuẩn giờ Việt Nam
         const dateStr = formatDateTimeVN(m.created_at);
 
         tr.innerHTML = `
           <td class="text-center text-muted">${idx + 1}</td>
           <td><i class="bi bi-calendar3 me-1 text-muted"></i>${dateStr}</td>
+          <td>
+            <span class="badge bg-secondary font-monospace me-1">${escapeHtml(m.sku || '')}</span>
+            <span class="fw-semibold text-dark">${escapeHtml(m.product_name || '')}</span>
+          </td>
           <td class="text-center">${typeBadge}</td>
-          <td><span class="font-monospace text-primary fw-semibold">${escapeHtml(m.document_no)}</span></td>
-          <td><i class="bi bi-person me-1 text-secondary"></i>${escapeHtml(m.performed_by)}</td>
+          <td><span class="font-monospace text-primary fw-semibold">${escapeHtml(m.document_no || 'N/A')}</span></td>
+          <td><i class="bi bi-person me-1 text-secondary"></i>${escapeHtml(m.performed_by || 'Hệ thống')}</td>
           <td class="text-end">${deltaFormatted}</td>
           <td class="text-end fw-bold font-monospace text-dark">${m.balance_after}</td>
         `;
@@ -342,14 +531,24 @@ async function viewHistory(productId) {
     if (tableContainer) tableContainer.classList.remove('d-none');
 
   } catch (err) {
-    console.error('Lỗi khi lấy lịch sử biến động:', err);
-    if (loadingEl) loadingEl.classList.add('d-none');
+    console.error('Lỗi khi tải lịch sử biến động:', err);
     if (errorEl) {
       if (errorTextEl) errorTextEl.textContent = err.message || 'Không thể tải lịch sử biến động kho.';
       errorEl.classList.remove('d-none');
     }
+  } finally {
+    if (loadingEl) loadingEl.classList.add('d-none');
   }
 }
+
+// Gán toàn cục các hàm thao tác giao diện
+window.viewHistory = viewHistory;
+window.viewAllHistory = viewAllHistory;
+window.applyHistoryFilter = applyHistoryFilter;
+window.resetHistoryFilter = resetHistoryFilter;
+window.onHistoryProductChange = onHistoryProductChange;
+window.closeHistoryModal = closeHistoryModal;
+window.loadInventory = loadInventory;
 
 // Lắng nghe sự kiện khởi chạy trang
 document.addEventListener('DOMContentLoaded', async () => {

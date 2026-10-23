@@ -2,8 +2,12 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Bán Hàng - POS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bán hàng tại quầy - POS Store</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/public/css/style.css">
+  <script src="/public/js/layout-init.js"></script>
   <style>
     /* Ẩn vùng in riêng trên màn hình hiển thị thông thường */
     #invoice-print-section {
@@ -12,7 +16,8 @@
 
     /* CSS chuẩn cho bản in (In / Lưu PDF) */
     @media print {
-      nav, .navbar, .container, .modal, .modal-backdrop, h2, .btn, .btn-close, .pos-manager-sidebar {
+      nav, .navbar, .pos-content-container, .pos-topbar-wrapper, .pos-manager-sidebar,
+      .modal, .modal-backdrop, h2, .btn, .btn-close {
         display: none !important;
       }
 
@@ -72,15 +77,18 @@
   <!-- Vùng in riêng độc lập trực thuộc body (khi in / lưu PDF) -->
   <div id="invoice-print-section" aria-hidden="true"></div>
 
-  <div class="container mt-5 pt-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="mb-0">BÁN HÀNG TẠI QUẦY</h2>
-      <span class="badge bg-primary fs-6 px-3 py-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cash me-1" viewBox="0 0 16 16">
-          <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
-          <path d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V4zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2H3z"/>
-        </svg>
-        Phương thức: Tiền mặt
+  <div class="pos-content-container">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom gap-2">
+      <div>
+        <h2 class="page-title mb-1">
+          <i class="bi bi-cart3 me-2 text-primary"></i>Bán hàng tại quầy
+        </h2>
+        <p class="page-subtitle">
+          Tạo hóa đơn bán lẻ, kiểm tra tồn kho tức thì và hỗ trợ thanh toán linh hoạt
+        </p>
+      </div>
+      <span class="badge bg-white text-dark border fs-6 px-3 py-2 shadow-sm" id="header-payment-badge">
+        <i class="bi bi-cash me-1 text-success"></i> Phương thức: Tiền mặt
       </span>
     </div>
 
@@ -91,68 +99,63 @@
     <div id="sales-success-box" class="card border-success shadow-sm mb-4 d-none">
       <div class="card-body bg-light-success d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-          <h5 class="text-success fw-bold mb-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-circle-fill me-1" viewBox="0 0 16 16">
-              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-            </svg>
-            Thanh toán thành công!
+          <h5 class="text-success fw-bold mb-1 d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2 fs-5"></i> Thanh toán thành công!
           </h5>
           <p class="mb-0 text-dark">Mã hóa đơn thực tế đã lưu: <strong id="success-invoice-no" class="text-primary font-monospace fs-6"></strong></p>
         </div>
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-primary" id="btn-view-receipt" onclick="viewSavedInvoice()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer me-1" viewBox="0 0 16 16">
-              <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-              <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
-            </svg>
-            Xem / In Hóa Đơn
+            <i class="bi bi-printer me-1"></i> Xem / In hóa đơn
           </button>
           <button type="button" class="btn btn-outline-secondary" onclick="dismissSuccessBox()">Tiếp tục bán</button>
         </div>
       </div>
     </div>
     
-    <div class="row">
+    <div class="row g-4 align-items-start">
       <!-- Cột bên trái: Chọn sản phẩm & Bảng giỏ hàng -->
       <div class="col-lg-8">
         <!-- Khối chọn sản phẩm -->
-        <div class="card mb-4 shadow-sm border-0">
-          <div class="card-header bg-primary text-white py-2">
-            <h5 class="mb-0 fs-6 fw-bold">1. CHỌN SẢN PHẨM VÀO GIỎ</h5>
+        <div class="card mb-4 shadow-sm border">
+          <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fs-6 fw-bold text-dark d-flex align-items-center">
+              <i class="bi bi-cart-plus text-primary me-2"></i>1. Chọn sản phẩm vào giỏ
+            </h5>
           </div>
-          <div class="card-body bg-light">
+          <div class="card-body p-3 p-md-4">
             <form id="sales-add-form" onsubmit="event.preventDefault(); addSaleItem(event);">
               <!-- Tìm kiếm nhanh theo tên hoặc SKU -->
-              <div class="mb-2">
-                <label for="s-search" class="form-label fw-semibold small text-secondary mb-1">Tìm kiếm nhanh (Tên hoặc SKU):</label>
+              <div class="mb-3">
+                <label for="s-search" class="form-label small fw-bold text-secondary mb-1">Tìm kiếm nhanh (Tên hoặc SKU):</label>
                 <div class="input-group">
-                  <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                  <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
                   <input type="text" id="s-search" class="form-control" placeholder="Nhập tên hoặc mã SKU để lọc danh sách..." oninput="filterProductOptions(this.value)" autocomplete="off">
                 </div>
               </div>
 
               <div class="row g-2 align-items-end mb-2">
                 <div class="col-md-7">
-                  <label for="s-product" class="form-label fw-semibold small text-secondary mb-1">Chọn sản phẩm</label>
+                  <label for="s-product" class="form-label small fw-bold text-secondary mb-1">Chọn sản phẩm <span class="text-danger">*</span></label>
                   <select id="s-product" class="form-select" onchange="onProductSelectChange()"></select>
                 </div>
                 <div class="col-md-3 col-sm-6">
-                  <label for="s-qty" class="form-label fw-semibold small text-secondary mb-1">Số lượng mua</label>
-                  <input type="number" id="s-qty" class="form-control text-center fw-bold" placeholder="SL" min="1" step="1" value="1">
+                  <label for="s-qty" class="form-label small fw-bold text-secondary mb-1">Số lượng mua <span class="text-danger">*</span></label>
+                  <input type="number" id="s-qty" class="form-control text-center font-monospace" placeholder="Nhập số lượng" min="1" step="1">
                 </div>
                 <div class="col-md-2 col-sm-6">
-                  <button type="button" id="btn-add-item" class="btn btn-success w-100 fw-semibold" onclick="addSaleItem(event)">
-                    <i class="bi bi-cart-plus me-1"></i>Thêm
+                  <button type="button" id="btn-add-item" class="btn btn-primary w-100 fw-semibold" onclick="addSaleItem(event)">
+                    <i class="bi bi-plus-lg me-1"></i>Thêm
                   </button>
                 </div>
               </div>
 
               <!-- Thẻ thông tin chi tiết sản phẩm được chọn: ĐVT, Giá bán, Tồn kho -->
-              <div id="s-product-info-box" class="p-2 border rounded bg-white small d-none">
+              <div id="s-product-info-box" class="p-3 border rounded bg-light small d-none mt-3">
                 <div class="row g-2 text-center text-md-start">
                   <div class="col-md-3"><strong>Mã SKU:</strong> <span id="info-p-sku" class="text-primary font-monospace fw-bold"></span></div>
                   <div class="col-md-3"><strong>Đơn vị tính:</strong> <span id="info-p-unit" class="fw-semibold"></span></div>
-                  <div class="col-md-3"><strong>Giá bán:</strong> <span id="info-p-price" class="text-danger fw-bold"></span></div>
+                  <div class="col-md-3"><strong>Giá bán:</strong> <span id="info-p-price" class="text-dark font-monospace fw-bold"></span></div>
                   <div class="col-md-3"><strong>Tồn kho:</strong> <span id="info-p-stock" class="badge"></span></div>
                 </div>
               </div>
@@ -161,55 +164,45 @@
         </div>
 
         <!-- Khối Giỏ hàng -->
-        <div class="card mb-4 shadow-sm border-0">
-          <div class="card-header bg-secondary text-white py-2 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fs-6 fw-bold">2. GIỎ HÀNG BÁN HÀNG</h5>
-            <span class="badge bg-light text-dark" id="cart-item-count">0 sản phẩm</span>
+        <div class="card mb-4 shadow-sm border">
+          <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fs-6 fw-bold text-dark d-flex align-items-center">
+              <i class="bi bi-basket3 text-primary me-2"></i>2. Giỏ hàng bán hàng
+            </h5>
+            <span class="badge bg-light text-dark border" id="cart-item-count">0 sản phẩm</span>
           </div>
           <div class="card-body p-0">
             <div class="table-responsive">
-              <table class="table table-bordered table-hover align-middle mb-0" id="s-cart">
-                <thead class="table-light">
+              <table class="table table-hover align-middle mb-0" id="s-cart">
+                <thead>
                   <tr>
                     <th class="text-center" style="width: 40px;">#</th>
                     <th style="width: 110px;">Mã SKU</th>
-                    <th>Tên Sản Phẩm</th>
+                    <th>Tên sản phẩm</th>
                     <th class="text-center" style="width: 70px;">ĐVT</th>
-                    <th class="text-end" style="width: 120px;">Đơn Giá</th>
-                    <th class="text-center" style="width: 140px;">Số Lượng</th>
-                    <th class="text-end" style="width: 130px;">Thành Tiền</th>
+                    <th class="text-end" style="width: 120px;">Đơn giá</th>
+                    <th class="text-center" style="width: 140px;">Số lượng</th>
+                    <th class="text-end" style="width: 130px;">Thành tiền</th>
                     <th class="text-center" style="width: 70px;">Xóa</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
               </table>
             </div>
-
-            <!-- Tổng tiền và nút thanh toán -->
-            <div class="p-3 bg-light border-top">
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <span class="fs-5 fw-bold text-secondary">Tổng Tiền Thanh Toán:</span>
-                <span class="fs-3 fw-bold text-danger" id="s-total">0 đ</span>
-              </div>
-
-              <button type="button" id="btn-checkout" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow-sm" onclick="checkout(event)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-wallet2 me-2" viewBox="0 0 16 16">
-                  <path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/>
-                </svg>
-                XÁC NHẬN THANH TOÁN (TIỀN MẶT)
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Cột bên phải: Thông tin giao dịch & Quy định thanh toán -->
+      <!-- Cột bên phải: Thông tin giao dịch, Tổng tiền & Nút thanh toán gom chung -->
       <div class="col-lg-4">
-        <div class="card shadow-sm mb-4 border-0">
-          <div class="card-header bg-dark text-white py-2">
-            <h5 class="mb-0 fs-6 fw-bold">THÔNG TIN GIAO DỊCH</h5>
+        <div class="card shadow-sm mb-4 border">
+          <div class="card-header bg-white py-3 border-bottom">
+            <h5 class="mb-0 fs-6 fw-bold text-dark d-flex align-items-center">
+              <i class="bi bi-credit-card-2-front text-primary me-2"></i>Thông tin thanh toán
+            </h5>
           </div>
-          <div class="card-body">
+          <div class="card-body p-3 p-md-4">
+            <!-- Mã hóa đơn & Người thực hiện -->
             <div class="mb-3 pb-2 border-bottom">
               <p class="mb-1 text-muted small">Mã hóa đơn dự kiến:</p>
               <h5 id="display-invoice-no" class="text-primary font-monospace fw-bold mb-0"></h5>
@@ -217,43 +210,144 @@
 
             <div class="mb-3 pb-2 border-bottom">
               <p class="mb-1 text-muted small">Người thực hiện:</p>
-              <p class="fw-semibold mb-0" id="display-seller-info">Đang tải...</p>
+              <p class="fw-semibold mb-0 text-dark" id="display-seller-info">Đang tải...</p>
             </div>
 
-            <div class="mb-0">
-              <p class="mb-1 text-muted small">Hình thức thanh toán:</p>
-              <div class="d-flex align-items-center gap-2">
-                <span class="badge bg-success fs-6">Tiền mặt tại quầy</span>
+            <!-- Phương thức thanh toán -->
+            <div class="mb-3 pb-3 border-bottom">
+              <label class="form-label small fw-bold text-secondary mb-2">Hình thức thanh toán:</label>
+              <div class="d-flex flex-column gap-2 mb-2">
+                <div class="form-check p-2 border rounded bg-white shadow-none">
+                  <input class="form-check-input ms-1 me-2" type="radio" name="paymentMethodRadio" id="pm-cash" value="CASH" checked onchange="onPaymentMethodChange()">
+                  <label class="form-check-label fw-semibold" for="pm-cash" style="cursor: pointer;">
+                    <i class="bi bi-cash me-1 text-success"></i> Tiền mặt tại quầy
+                  </label>
+                </div>
+                <div class="form-check p-2 border rounded bg-white shadow-none">
+                  <input class="form-check-input ms-1 me-2" type="radio" name="paymentMethodRadio" id="pm-qr" value="BANK_TRANSFER" onchange="onPaymentMethodChange()">
+                  <label class="form-check-label fw-semibold" for="pm-qr" style="cursor: pointer;">
+                    <i class="bi bi-qr-code-scan me-1 text-primary"></i> Chuyển khoản QR (VietQR)
+                  </label>
+                </div>
               </div>
-              <div class="alert alert-info py-2 px-3 mt-2 mb-0 small">
-                <strong>Lưu ý:</strong> Cửa hàng hiện chỉ hỗ trợ thu <strong>Tiền mặt</strong> trực tiếp tại quầy. Không hỗ trợ cổng thanh toán online.
+
+              <!-- Cảnh báo chưa cấu hình ngân hàng -->
+              <div id="payment-config-warning" class="alert alert-warning py-2 px-3 mt-2 mb-0 small d-none" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <span id="payment-config-warning-text">Chưa cấu hình tài khoản nhận chuyển khoản</span>
               </div>
+            </div>
+
+            <!-- Tổng tiền và nút thanh toán gom cùng khối bên phải -->
+            <div class="p-3 bg-light rounded border mb-0">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fs-6 fw-bold text-secondary">Tổng tiền:</span>
+                <span class="fs-3 fw-bold text-dark font-monospace" id="s-total">0 đ</span>
+              </div>
+              <div class="text-muted small mb-3">
+                <i class="bi bi-info-circle me-1"></i>Đã bao gồm đầy đủ các dòng hàng
+              </div>
+
+              <button type="button" id="btn-checkout" class="btn btn-primary btn-lg w-100 fw-bold py-2 shadow-sm" onclick="checkout(event)">
+                <i class="bi bi-wallet2 me-2"></i> Xác nhận thanh toán (Tiền mặt)
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Modal Thanh Toán Chuyển Khoản QR (VietQR) -->
+    <div class="modal fade" id="qr-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="qr-modal-title" aria-hidden="true" style="display:none;">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-primary text-white py-3">
+            <h5 class="modal-title fw-bold" id="qr-modal-title">
+              <i class="bi bi-qr-code-scan me-2"></i>Thanh toán chuyển khoản QR
+            </h5>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <!-- Cảnh báo kết quả chưa xác định cần gửi lại -->
+            <div id="qr-indeterminate-alert" class="alert alert-danger py-2 px-3 small mb-3 text-start d-none" role="alert">
+              <i class="bi bi-exclamation-octagon-fill me-1"></i>
+              <strong>Chưa rõ kết quả giao dịch:</strong> Mất kết nối mạng hoặc máy chủ chưa phản hồi. Dữ liệu thanh toán được bảo toàn nguyên vẹn để chống trừ kho 2 lần hoặc trùng hóa đơn. Vui lòng bấm <strong>"Thử lại gửi yêu cầu"</strong>.
+            </div>
+
+            <!-- Cảnh báo lỗi tải ảnh mã QR nếu có -->
+            <div id="qr-img-error" class="alert alert-warning py-2 px-3 small mb-3 text-start d-none" role="alert">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <strong>Lưu ý:</strong> Không thể tải hình ảnh mã QR từ dịch vụ VietQR. Vui lòng chuyển khoản theo thông tin văn bản bên dưới.
+            </div>
+
+            <!-- Vùng hiển thị mã QR -->
+            <div id="qr-container" class="mb-3 p-2 bg-light rounded border d-inline-block position-relative" style="min-width: 250px; min-height: 250px;">
+              <img id="qr-image" src="" alt="Mã QR VietQR" class="img-fluid rounded" style="max-height: 270px;" onerror="onQrImageError()" onload="onQrImageLoad()">
+              <div id="qr-loading-spinner" class="position-absolute top-50 start-50 translate-middle">
+                <div class="spinner-border text-primary" role="status"></div>
+              </div>
+            </div>
+
+            <!-- Thông tin chuyển khoản dạng chữ đầy đủ -->
+            <div class="card bg-light border p-3 mb-3 text-start small">
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Ngân hàng thụ hưởng:</span>
+                <strong class="text-dark font-monospace fs-6" id="qr-bank-id">---</strong>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Số tài khoản:</span>
+                <strong class="text-primary font-monospace fs-6" id="qr-account-no">---</strong>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span class="text-muted">Chủ tài khoản:</span>
+                <strong class="text-dark" id="qr-account-name">---</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1 border-top pt-2">
+                <span class="text-muted">Số tiền thanh toán:</span>
+                <strong class="text-dark font-monospace fs-5" id="qr-amount">0 đ</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                <span class="text-muted">Nội dung chuyển khoản:</span>
+                <span class="badge bg-dark font-monospace fs-6 px-2 py-1" id="qr-transfer-content">---</span>
+              </div>
+            </div>
+
+            <!-- Hướng dẫn nhân viên kiểm tra số dư -->
+            <div class="alert alert-info py-2 px-3 small mb-0 text-start">
+              <i class="bi bi-info-circle-fill me-1"></i>
+              <strong>Hướng dẫn:</strong> Thu ngân hoặc Quản lý phải tự kiểm tra biến động số dư trong tài khoản ngân hàng và chỉ bấm xác nhận khi đã nhận đúng và đủ số tiền. Hệ thống không tự động đối soát ngân hàng.
+            </div>
+          </div>
+          <div class="modal-footer bg-light d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary" id="btn-cancel-qr" onclick="cancelQrPayment()">
+              <i class="bi bi-arrow-left me-1"></i> Quay lại giỏ hàng
+            </button>
+            <button type="button" class="btn btn-success fw-bold px-3" id="btn-confirm-qr" onclick="confirmQrPayment(event)">
+              <i class="bi bi-check2-circle me-1"></i> Đã kiểm tra và nhận đủ tiền
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="qr-modal-backdrop" class="modal-backdrop fade" style="display:none;"></div>
+
     <!-- Modal Xem Chi Tiết & In / Lưu PDF Hóa Đơn -->
     <div class="modal fade" id="invoice-modal" tabindex="-1" aria-labelledby="invoice-modal-title" aria-hidden="true" style="display:none;">
-      <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content shadow border-0">
           <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title" id="invoice-modal-title">Chi Tiết Hóa Đơn</h5>
+            <h5 class="modal-title fw-bold" id="invoice-modal-title">
+              <i class="bi bi-receipt me-2"></i>Chi tiết hóa đơn
+            </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="closeInvoiceModal()"></button>
           </div>
           <div class="modal-body p-4" id="invoice-modal-body">
             <div id="invoice-preview-area"></div>
           </div>
-          <div class="modal-footer">
+          <div class="modal-footer bg-light justify-content-between">
             <button type="button" id="btn-print-invoice" class="btn btn-primary" onclick="printInvoice()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer me-1" viewBox="0 0 16 16">
-                <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
-                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
-              </svg>
-              In / Lưu PDF
+              <i class="bi bi-printer me-1"></i> In / Lưu PDF
             </button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="closeInvoiceModal()">Đóng</button>
+            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal" onclick="closeInvoiceModal()">Đóng</button>
           </div>
         </div>
       </div>

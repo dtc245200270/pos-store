@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../../config/db');
 const { requireRole } = require('../../middleware/auth');
+const logger = require('../../config/logger');
 
 const router = express.Router();
 
@@ -31,8 +32,7 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (error) {
-    console.error('Lỗi lấy danh sách nhân viên:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'get_employees', error);
   }
 });
 
@@ -78,8 +78,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ message: 'Tạo tài khoản nhân viên thành công', id: result.insertId });
   } catch (error) {
-    console.error('Lỗi tạo nhân viên:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'create_employee', error);
   }
 });
 
@@ -146,8 +145,7 @@ router.put('/:id', async (req, res) => {
     res.json({ message: 'Cập nhật tài khoản thành công' });
   } catch (error) {
     await connection.rollback();
-    console.error('Lỗi cập nhật nhân viên:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'update_employee', error);
   } finally {
     connection.release();
   }
@@ -218,8 +216,7 @@ router.patch('/:id/toggle-active', async (req, res) => {
     });
   } catch (error) {
     await connection.rollback();
-    console.error('Lỗi đổi trạng thái nhân viên:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'toggle_employee_active', error);
   } finally {
     connection.release();
   }
@@ -259,7 +256,7 @@ router.patch('/:id/reset-password', async (req, res) => {
         [Number(targetUser.id)]
       );
     } catch (sessErr) {
-      console.error('Lỗi dọn dẹp sessions:', sessErr.message);
+      logger.logServerError(req, 'cleanup_sessions_after_reset_password', sessErr);
     }
 
     // Xóa bộ đếm đăng nhập thất bại để nhân viên có thể đăng nhập ngay với mật khẩu mới
@@ -270,8 +267,7 @@ router.patch('/:id/reset-password', async (req, res) => {
 
     res.json({ message: 'Đặt lại mật khẩu thành công' });
   } catch (error) {
-    console.error('Lỗi đặt lại mật khẩu:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'reset_password', error);
   }
 });
 
@@ -335,8 +331,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ message: 'Xóa tài khoản thành công' });
   } catch (error) {
     await connection.rollback();
-    console.error('Lỗi xóa nhân viên:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'delete_employee', error);
   } finally {
     connection.release();
   }

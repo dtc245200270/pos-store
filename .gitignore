@@ -3,4 +3,13 @@ node_modules/
 .env.*
 !.env.example
 *.log
+logs/
+cookies.txt
+*.zip
+docker_bundle_staging/
 database/backups/
+deploy/monitoring/data/
+deploy/monitoring/bin/
+deploy/monitoring/*.log
+deploy/logging/artifacts/
+deploy/monitoring/artifacts/

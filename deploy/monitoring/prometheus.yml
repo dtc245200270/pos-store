@@ -1,0 +1,18 @@
+# Cấu hình Prometheus cho POS Store
+# Lắng nghe tại: 127.0.0.1:9090
+# Scrape endpoint metrics Node.js tại: 127.0.0.1:9101/metrics mỗi 15 giây
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'pos_store'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['127.0.0.1:9101']
+        labels:
+          app: 'pos_store'
+          env: 'development'

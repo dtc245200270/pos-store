@@ -3,48 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tổng Quan Quản Lý - POS Store</title>
+  <title>Tổng quan quản lý - POS Store</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-    .stat-card {
-      border: 0;
-      border-radius: 10px;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .stat-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
-    }
-    .table th { font-weight: 600; font-size: 0.88rem; }
-    .card-header h5 { font-size: 1.05rem; }
-    .badge-stock { font-size: 0.85rem; padding: 0.35em 0.6em; }
-  </style>
+  <link href="/public/css/style.css" rel="stylesheet">
+  <script src="/public/js/layout-init.js"></script>
 </head>
-<body class="bg-light">
-  <div class="container-fluid py-4 px-md-4">
+<body>
+  <div class="pos-content-container">
     <!-- Header trang Tổng quan -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 pb-2 border-bottom gap-2">
+    <div class="dashboard-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 pb-3 border-bottom gap-3">
       <div>
-        <h2 class="h3 mb-1 fw-bold text-dark">
-          <i class="bi bi-speedometer2 me-2 text-primary"></i>Tổng Quan Hoạt Động Cửa Hàng
+        <h2 class="dashboard-header-title mb-1">
+          <i class="bi bi-speedometer2 me-2 text-primary"></i>Tổng quan cửa hàng
         </h2>
-        <p class="text-muted small mb-0">
-          Theo dõi số liệu bán hàng hôm nay, tình trạng kho và chứng từ hóa đơn gần đây theo thời gian thực
+        <p class="dashboard-header-desc">
+          Theo dõi doanh thu, hóa đơn và tình trạng tồn kho.
         </p>
       </div>
-      <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-light text-dark border px-3 py-2 shadow-sm" id="today-date-badge">
-          <i class="bi bi-calendar3 me-1 text-primary"></i>Hôm nay: <strong id="today-date-label">Đang tải...</strong> (Asia/Ho_Chi_Minh)
-        </span>
-        <button type="button" id="btn-refresh-dashboard" class="btn btn-outline-primary btn-sm px-3 shadow-sm" onclick="loadDashboard()">
+      <div class="dashboard-header-actions d-flex flex-wrap align-items-center">
+        <div id="today-date-badge" class="dashboard-date-display">
+          <i class="bi bi-calendar3 me-2 text-muted"></i><span>Hôm nay, <span id="today-date-label">12/10/2026</span></span>
+        </div>
+        <button type="button" id="btn-refresh-dashboard" class="btn btn-outline-primary dashboard-refresh-btn" onclick="loadDashboard()">
           <i class="bi bi-arrow-clockwise me-1"></i> Làm mới
         </button>
       </div>
     </div>
 
     <!-- Thông báo lỗi tải nếu có -->
-    <div id="dashboard-error" class="alert alert-danger shadow-sm d-none mb-3" role="alert">
+    <div id="dashboard-error" class="alert alert-danger shadow-sm d-none mb-4" role="alert">
       <div class="d-flex justify-content-between align-items-center">
         <div>
           <i class="bi bi-exclamation-octagon-fill me-2 fs-5"></i>
@@ -59,96 +47,80 @@
     <!-- Trạng thái đang tải dữ liệu -->
     <div id="dashboard-loading" class="text-center py-5">
       <div class="spinner-border text-primary" role="status"></div>
-      <p class="mt-2 text-muted mb-0">Đang tổng hợp số liệu từ cơ sở dữ liệu...</p>
+      <p class="mt-2 text-muted mb-0">Đang tổng hợp số liệu từ hệ thống...</p>
     </div>
 
     <!-- Nội dung chính sau khi tải -->
     <div id="dashboard-content" class="d-none">
       <!-- 4 Thẻ số liệu thống kê trọng yếu -->
       <div class="row g-3 mb-4">
-        <!-- 1. Doanh thu hôm nay (Không gọi là lợi nhuận, không tính tiền nhập) -->
+        <!-- 1. Doanh thu hôm nay -->
         <div class="col-xl-3 col-sm-6">
-          <div class="card stat-card shadow-sm bg-white h-100">
-            <div class="card-body p-3">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="text-muted small fw-bold text-uppercase">Doanh Thu Hôm Nay</span>
-                <div class="rounded-3 bg-success bg-opacity-10 p-2 text-success">
-                  <i class="bi bi-cash-coin fs-4"></i>
-                </div>
-              </div>
-              <div class="fs-3 fw-bold text-success mb-1" id="stat-today-revenue">0 đ</div>
-              <div class="text-muted small">
-                <i class="bi bi-info-circle me-1"></i>Từ hóa đơn bán hoàn tất trong ngày.
-              </div>
+          <div class="stat-card-modern shadow-sm">
+            <div class="stat-icon-wrapper stat-icon-success">
+              <i class="bi bi-cash-coin"></i>
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="stat-label">Doanh thu hôm nay</div>
+              <div class="stat-value text-dark text-truncate" id="stat-today-revenue">0 đ</div>
+              <div class="text-muted small mt-1 text-truncate">Từ hóa đơn hoàn tất trong ngày</div>
             </div>
           </div>
         </div>
 
         <!-- 2. Số hóa đơn hôm nay -->
         <div class="col-xl-3 col-sm-6">
-          <div class="card stat-card shadow-sm bg-white h-100">
-            <div class="card-body p-3">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="text-muted small fw-bold text-uppercase">Số Hóa Đơn Hôm Nay</span>
-                <div class="rounded-3 bg-primary bg-opacity-10 p-2 text-primary">
-                  <i class="bi bi-receipt fs-4"></i>
-                </div>
-              </div>
-              <div class="fs-3 fw-bold text-dark mb-1" id="stat-today-invoices">0</div>
-              <div class="text-muted small">
-                <i class="bi bi-check2-circle me-1 text-primary"></i>Giao dịch đã thanh toán hôm nay.
-              </div>
+          <div class="stat-card-modern shadow-sm">
+            <div class="stat-icon-wrapper stat-icon-primary">
+              <i class="bi bi-receipt"></i>
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="stat-label">Hóa đơn hôm nay</div>
+              <div class="stat-value text-dark text-truncate" id="stat-today-invoices">0</div>
+              <div class="text-muted small mt-1 text-truncate">Giao dịch đã thanh toán</div>
             </div>
           </div>
         </div>
 
         <!-- 3. Số sản phẩm đang kinh doanh -->
         <div class="col-xl-3 col-sm-6">
-          <div class="card stat-card shadow-sm bg-white h-100">
-            <div class="card-body p-3">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="text-muted small fw-bold text-uppercase">Sản Phẩm Đang Bán</span>
-                <div class="rounded-3 bg-info bg-opacity-10 p-2 text-info">
-                  <i class="bi bi-box-seam fs-4 text-info"></i>
-                </div>
-              </div>
-              <div class="fs-3 fw-bold text-dark mb-1" id="stat-active-products">0</div>
-              <div class="text-muted small">
-                <i class="bi bi-tags me-1 text-info"></i>Mặt hàng đang kinh doanh.
-              </div>
+          <div class="stat-card-modern shadow-sm">
+            <div class="stat-icon-wrapper stat-icon-info">
+              <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="stat-label">Sản phẩm đang bán</div>
+              <div class="stat-value text-dark text-truncate" id="stat-active-products">0</div>
+              <div class="text-muted small mt-1 text-truncate">Mặt hàng đang kinh doanh</div>
             </div>
           </div>
         </div>
 
-        <!-- 4. Cảnh báo hết hàng / sắp hết hàng -->
+        <!-- 4. Cần nhập thêm hàng -->
         <div class="col-xl-3 col-sm-6">
-          <div class="card stat-card shadow-sm bg-white h-100">
-            <div class="card-body p-3">
-              <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="text-muted small fw-bold text-uppercase">Cần Nhập Thêm Hàng</span>
-                <div class="rounded-3 bg-warning bg-opacity-10 p-2 text-warning">
-                  <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
-                </div>
-              </div>
-              <div class="fs-3 fw-bold text-warning mb-1" id="stat-low-stock-count">0</div>
-              <div class="text-muted small">
-                <i class="bi bi-bell me-1 text-warning"></i>Mặt hàng hết hoặc sắp hết (≤ 5).
-              </div>
+          <div class="stat-card-modern shadow-sm">
+            <div class="stat-icon-wrapper stat-icon-warning">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="stat-label">Cần nhập thêm hàng</div>
+              <div class="stat-value text-warning text-truncate" id="stat-low-stock-count">0</div>
+              <div class="text-muted small mt-1 text-truncate">Mặt hàng hết hoặc sắp hết (≤ 5)</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Bố cục 2 khối: Danh sách hết/sắp hết hàng & Hóa đơn gần đây -->
-      <div class="row g-4">
+      <!-- Bố cục 2 khối: Danh sách hết/sắp hết hàng & Hóa đơn gần đây (Không ép kéo dài bằng h-100) -->
+      <div class="row g-4 align-items-start">
         <!-- Khối Trái: Sản phẩm hết hàng / sắp hết hàng -->
         <div class="col-lg-6">
-          <div class="card shadow-sm border-0 h-100">
+          <div class="card shadow-sm border mb-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-exclamation-circle text-warning me-2"></i>Sản Phẩm Hết &amp; Sắp Hết Hàng
+              <h5 class="mb-0 fw-bold fs-6 text-dark d-flex align-items-center">
+                <i class="bi bi-exclamation-circle text-warning me-2"></i>Sản phẩm hết &amp; sắp hết hàng
               </h5>
-              <a href="/inventory" class="btn btn-sm btn-outline-primary">
+              <a href="/inventory" class="btn btn-sm btn-outline-primary py-1 px-2">
                 Xem kho <i class="bi bi-arrow-right ms-1"></i>
               </a>
             </div>
@@ -157,13 +129,13 @@
               <!-- Bảng sản phẩm -->
               <div class="table-responsive" id="low-stock-table-container">
                 <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light border-bottom">
+                  <thead>
                     <tr>
                       <th class="text-center" style="width: 40px;">#</th>
                       <th style="width: 120px;">Mã SKU</th>
-                      <th>Tên Sản Phẩm</th>
+                      <th>Tên sản phẩm</th>
                       <th class="text-center" style="width: 70px;">ĐVT</th>
-                      <th class="text-center" style="width: 130px;">Tồn Kho</th>
+                      <th class="text-center" style="width: 130px;">Tồn kho</th>
                       <th class="text-center" style="width: 100px;">Thao tác</th>
                     </tr>
                   </thead>
@@ -171,24 +143,24 @@
                 </table>
               </div>
 
-              <!-- Trạng thái trống (Không có SP hết/sắp hết) -->
+              <!-- Trạng thái trống -->
               <div id="low-stock-empty" class="text-center py-5 d-none">
                 <i class="bi bi-check-circle-fill fs-1 text-success d-block mb-2"></i>
-                <h6 class="text-dark fw-bold">Tồn kho an toàn!</h6>
+                <h6 class="text-dark fw-bold">Tồn kho an toàn</h6>
                 <p class="text-muted small mb-0">Hiện không có sản phẩm nào bị hết hàng hoặc sắp hết hàng.</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Khối Phải: Hóa đơn gần đây có liên kết xem chi tiết -->
+        <!-- Khối Phải: Hóa đơn gần đây -->
         <div class="col-lg-6">
-          <div class="card shadow-sm border-0 h-100">
+          <div class="card shadow-sm border mb-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-clock-history text-primary me-2"></i>Hóa Đơn Bán Hàng Gần Đây
+              <h5 class="mb-0 fw-bold fs-6 text-dark d-flex align-items-center">
+                <i class="bi bi-clock-history text-primary me-2"></i>Hóa đơn bán hàng gần đây
               </h5>
-              <a href="/invoices" class="btn btn-sm btn-outline-primary">
+              <a href="/invoices" class="btn btn-sm btn-outline-primary py-1 px-2">
                 Tất cả hóa đơn <i class="bi bi-arrow-right ms-1"></i>
               </a>
             </div>
@@ -197,21 +169,21 @@
               <!-- Bảng hóa đơn gần đây -->
               <div class="table-responsive" id="recent-invoices-table-container">
                 <table class="table table-hover align-middle mb-0">
-                  <thead class="table-light border-bottom">
+                  <thead>
                     <tr>
                       <th class="text-center" style="width: 40px;">#</th>
-                      <th style="width: 130px;">Mã Hóa Đơn</th>
-                      <th>Người Lập</th>
-                      <th class="text-end" style="width: 120px;">Tổng Tiền</th>
-                      <th style="width: 150px;">Thời Gian (Giờ VN)</th>
-                      <th class="text-center" style="width: 90px;">Chi Tiết</th>
+                      <th style="width: 130px;">Mã hóa đơn</th>
+                      <th>Người lập</th>
+                      <th class="text-end" style="width: 130px;">Tổng tiền</th>
+                      <th style="width: 150px;">Thời gian</th>
+                      <th class="text-center" style="width: 80px;">Chi tiết</th>
                     </tr>
                   </thead>
                   <tbody id="recent-invoices-tbody"></tbody>
                 </table>
               </div>
 
-              <!-- Trạng thái trống (Chưa có hóa đơn nào) -->
+              <!-- Trạng thái trống -->
               <div id="recent-invoices-empty" class="text-center py-5 d-none">
                 <i class="bi bi-receipt-cutoff fs-1 text-muted d-block mb-2"></i>
                 <h6 class="text-dark fw-bold">Chưa có hóa đơn nào</h6>
@@ -230,7 +202,7 @@
       <div class="modal-content shadow border-0">
         <div class="modal-header bg-primary text-white">
           <h5 class="modal-title fw-bold" id="invoice-modal-title">
-            <i class="bi bi-receipt me-2"></i>Chi Tiết Hóa Đơn
+            <i class="bi bi-receipt me-2"></i>Chi tiết hóa đơn
           </h5>
           <button type="button" class="btn-close btn-close-white" aria-label="Close" onclick="closeInvoiceModal()"></button>
         </div>
@@ -255,13 +227,13 @@
                   <strong>Mã hóa đơn:</strong> <span class="font-monospace text-primary fw-bold" id="m-inv-no">-</span>
                 </div>
                 <div class="col-sm-6">
-                  <strong>Thời gian (Giờ VN):</strong> <span id="m-inv-date">-</span>
+                  <strong>Thời gian:</strong> <span id="m-inv-date">-</span>
                 </div>
                 <div class="col-sm-6">
                   <strong>Thu ngân lập:</strong> <span id="m-inv-creator">-</span>
                 </div>
                 <div class="col-sm-6">
-                  <strong>Tổng tiền:</strong> <span class="text-danger fw-bold fs-5" id="m-inv-total">-</span>
+                  <strong>Tổng tiền:</strong> <span class="text-dark fw-bold fs-5" id="m-inv-total">-</span>
                 </div>
               </div>
             </div>
@@ -273,11 +245,11 @@
                   <tr>
                     <th class="text-center" style="width: 40px;">#</th>
                     <th>Mã SKU</th>
-                    <th>Tên Sản Phẩm</th>
+                    <th>Tên sản phẩm</th>
                     <th class="text-center">ĐVT</th>
                     <th class="text-center">SL</th>
-                    <th class="text-end">Đơn Giá</th>
-                    <th class="text-end">Thành Tiền</th>
+                    <th class="text-end">Đơn giá</th>
+                    <th class="text-end">Thành tiền</th>
                   </tr>
                 </thead>
                 <tbody id="m-inv-items-tbody"></tbody>

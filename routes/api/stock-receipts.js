@@ -2,6 +2,7 @@ const express = require('express');
 const crypto = require('crypto');
 const pool = require('../../config/db');
 const { requireRole } = require('../../middleware/auth');
+const logger = require('../../config/logger');
 
 const router = express.Router();
 
@@ -116,8 +117,7 @@ router.get('/', async (req, res) => {
     );
     res.json(rows);
   } catch (error) {
-    console.error('Lỗi lấy phiếu nhập:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'get_stock_receipts', error);
   }
 });
 
@@ -153,8 +153,7 @@ router.get('/:id', async (req, res) => {
 
     res.json({ receipt: receipts[0], items });
   } catch (error) {
-    console.error('Lỗi lấy chi tiết phiếu nhập:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'get_stock_receipt_detail', error);
   }
 });
 
@@ -321,7 +320,6 @@ router.post('/', async (req, res) => {
 
   } catch (error) {
     await connection.rollback();
-    console.error('Lỗi giao dịch tạo phiếu nhập:', error);
     if (error.code === 'ER_DUP_ENTRY') {
        try {
          const [retry] = await connection.query(
@@ -338,7 +336,7 @@ router.post('/', async (req, res) => {
        } catch (err) {}
        return res.status(400).json({ error: 'Mã phiếu nhập đã tồn tại. Vui lòng nhập mã khác.' });
     }
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ khi tạo phiếu nhập' });
+    return logger.sendServerError(res, req, 'create_stock_receipt', error);
   } finally {
     connection.release();
   }

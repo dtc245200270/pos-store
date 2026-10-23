@@ -1,0 +1,17 @@
+# Cau hinh Prometheus cho POS Store (Docker)
+# Scrape endpoint metrics Node.js tai: app:9101/metrics moi 15 giay
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'pos_store'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['app:9101']
+        labels:
+          app: 'pos_store'
+          env: 'development'

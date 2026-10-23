@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../../config/db');
 const { requireLogin } = require('../../middleware/auth');
+const logger = require('../../config/logger');
 
 const router = express.Router();
 
@@ -107,8 +108,7 @@ router.get('/stats', async (req, res) => {
       recentInvoices: recentInvoicesRows
     });
   } catch (error) {
-    console.error('Lỗi lấy dữ liệu thống kê tổng quan:', error);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ khi lấy dữ liệu tổng quan' });
+    return logger.sendServerError(res, req, 'get_dashboard_stats', error);
   }
 });
 

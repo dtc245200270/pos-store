@@ -345,8 +345,8 @@ function renderCart() {
       </td>
       <td class="text-center text-muted">${escapeHtml(c.unit || 'Cái')}</td>
       <td class="text-center fw-bold text-primary">${c.quantity}</td>
-      <td class="text-end">${formatMoney(c.unit_cost)}</td>
-      <td class="text-end fw-bold text-danger">${formatMoney(lineTotal)}</td>
+      <td class="text-end font-monospace">${formatMoney(c.unit_cost)}</td>
+      <td class="text-end fw-bold text-dark font-monospace">${formatMoney(lineTotal)}</td>
       <td class="text-center">
         <div class="btn-group btn-group-sm">
           <button type="button" class="btn btn-outline-primary" onclick="editReceiptItem(${i})" title="Sửa dòng này">
@@ -483,7 +483,8 @@ async function saveReceipt(event) {
       // Lỗi máy chủ 5xx (chưa xác định được kết quả commit): GIỮ NGUYÊN request_key, mã phiếu và giỏ hàng
       isPendingRetry = true;
       noInput.disabled = true;
-      showReceiptMessage(`⚠️ <strong>Chưa xác định được kết quả lưu:</strong> Máy chủ phản hồi mã lỗi ${res.status}. Hệ thống giữ nguyên mã phiếu <strong>${escapeHtml(receiptNo)}</strong>, nội dung hàng hóa và khóa yêu cầu. Vui lòng bấm <strong>Thử Lại Lưu Phiếu</strong> bên dưới để hoàn tất an toàn.`, 'warning');
+      const refCode = (data && data.requestId) ? ` Không thể thực hiện thao tác. Mã tra cứu: ${data.requestId}.` : '';
+      showReceiptMessage(`⚠️ <strong>Chưa xác định được kết quả lưu:</strong>${refCode} Máy chủ phản hồi mã lỗi ${res.status}. Hệ thống giữ nguyên mã phiếu <strong>${escapeHtml(receiptNo)}</strong>, nội dung hàng hóa và khóa yêu cầu. Vui lòng bấm <strong>Thử Lại Lưu Phiếu</strong> bên dưới để hoàn tất an toàn.`, 'warning');
     } else {
       // NẾU LƯU THẤT BẠI DO LỖI 4xx (Client validation, chắc chắn bị từ chối):
       isPendingRetry = false;

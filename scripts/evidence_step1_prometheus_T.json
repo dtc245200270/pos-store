@@ -1,0 +1,1153 @@
+{
+  "evaluation_time": {
+    "unix_timestamp": 1791989255,
+    "iso_timestamp": "2026-10-14T14:47:35.000Z",
+    "local_time_vietnam": "21:47:35 14/10/2026"
+  },
+  "queries": {
+    "target_up": {
+      "name": "Target pos_store UP",
+      "expr": "up{job=\"pos_store\"}",
+      "response": {
+        "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {
+                "__name__": "up",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "duration_count_value": {
+      "name": "Metric duration count giá trị",
+      "expr": "http_request_duration_seconds_count{job=\"pos_store\"}",
+      "response": {
+        "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "HEAD",
+                "route": "/",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "HEAD",
+                "route": "/login",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/login",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "5"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/login",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/public/:file",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "11"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/csrf",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "427"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "POST",
+                "route": "/api/auth/login",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "12"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/csrf",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "3"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/me",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "2"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/dashboard/stats",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "2"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/products",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "27"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/public/:file",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "921"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/me",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "270"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/products",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "116"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/dashboard/stats",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "12"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "UNMATCHED",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/sales",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "31"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/invoices/payment-config",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "31"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "POST",
+                "route": "/api/invoices/prepare-qr",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "POST",
+                "route": "/api/invoices",
+                "status_code": "201"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/inventory",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "23"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/inventory",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "23"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/inventory/:productId/movements",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/stock-receipts",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "57"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/stock-receipts",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "57"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/invoices",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "32"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/invoices/sellers",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "32"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/invoices",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "32"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/employees",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "3"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/employees",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "3"
+              ]
+            },
+            {
+              "metric": {
+                "__name__": "http_request_duration_seconds_count",
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/login",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "duration_count_timestamp": {
+      "name": "Timestamp mẫu metric duration count",
+      "expr": "timestamp(http_request_duration_seconds_count{job=\"pos_store\"})",
+      "response": {
+        "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "HEAD",
+                "route": "/",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "HEAD",
+                "route": "/login",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/login",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/login",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/public/:file",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/csrf",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "POST",
+                "route": "/api/auth/login",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/csrf",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/me",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/dashboard/stats",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/products",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/public/:file",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/auth/me",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/products",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/dashboard/stats",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/",
+                "status_code": "304"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "UNMATCHED",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/sales",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/invoices/payment-config",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "POST",
+                "route": "/api/invoices/prepare-qr",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "POST",
+                "route": "/api/invoices",
+                "status_code": "201"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/inventory",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/inventory",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/inventory/:productId/movements",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/stock-receipts",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/stock-receipts",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/invoices",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/invoices/sellers",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/invoices",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/employees",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/api/employees",
+                "status_code": "200"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            },
+            {
+              "metric": {
+                "app": "pos_store",
+                "env": "development",
+                "instance": "127.0.0.1:9101",
+                "job": "pos_store",
+                "method": "GET",
+                "route": "/login",
+                "status_code": "302"
+              },
+              "value": [
+                1791989255,
+                "1791989253.165"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "duration_count_rate_1m": {
+      "name": "Rate duration count [1m]",
+      "expr": "sum(rate(http_request_duration_seconds_count{job=\"pos_store\"}[1m]))",
+      "response": {
+        "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": [
+            {
+              "metric": {},
+              "value": [
+                1791989255,
+                "0"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "panel_3_http_5xx_rate": {
+      "name": "Panel 3: Tỷ lệ lỗi HTTP 5xx (%)",
+      "expr": "((sum(rate(http_requests_total{job=\"pos_store\", status_code=~\"5..\"}[1m])) or (sum(rate(http_requests_total{job=\"pos_store\"}[1m])) * 0)) / (sum(rate(http_requests_total{job=\"pos_store\"}[1m])) > 0)) * 100",
+      "response": {
+        "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": []
+        }
+      }
+    },
+    "panel_4_latency_under_2s": {
+      "name": "Panel 4: Tỷ lệ hoàn thành <= 2s (%)",
+      "expr": "(sum(rate(http_request_duration_seconds_bucket{job=\"pos_store\", le=~\"2|2[.]0\"}[1m])) / (sum(rate(http_request_duration_seconds_count{job=\"pos_store\"}[1m])) > 0)) * 100",
+      "response": {
+        "status": "success",
+        "data": {
+          "resultType": "vector",
+          "result": []
+        }
+      }
+    }
+  }
+}

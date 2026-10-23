@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
+const logger = require('../config/logger');
 const router = express.Router();
 
 const { generateCsrfToken, csrfProtection, verifySessionDB, requireLogin } = require('../middleware/auth');
@@ -126,7 +127,7 @@ router.post('/login', csrfProtection, async (req, res) => {
     // Tạo lại session ID (chống Session Fixation)
     req.session.regenerate((err) => {
       if (err) {
-        return res.status(500).json({ error: 'Lỗi máy chủ khi tạo phiên' });
+        return logger.sendServerError(res, req, 'login_regenerate_session', err);
       }
 
       req.session.userId = user.id;
@@ -140,23 +141,21 @@ router.post('/login', csrfProtection, async (req, res) => {
 
       req.session.save((saveErr) => {
         if (saveErr) {
-          console.error('Lỗi save session:', saveErr);
-          return res.status(500).json({ error: 'Lỗi máy chủ khi lưu phiên' });
+          return logger.sendServerError(res, req, 'login_save_session', saveErr);
         }
         res.json({ message: 'Đăng nhập thành công', role: user.role, csrfToken: req.session.csrfToken });
       });
     });
 
   } catch (error) {
-    console.error('Login error:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'login', error);
   }
 });
 
 router.post('/logout', requireLogin, csrfProtection, (req, res) => {
   req.session.destroy((err) => {
     if (err) {
-      return res.status(500).json({ error: 'Lỗi máy chủ khi đăng xuất' });
+      return logger.sendServerError(res, req, 'logout', err);
     }
     res.clearCookie('connect.sid'); // Tên cookie mặc định của express-session
     res.json({ message: 'Đăng xuất thành công' });
@@ -220,21 +219,20 @@ router.post('/change-password', requireLogin, csrfProtection, async (req, res) =
         [Number(userId)]
       );
     } catch (sessErr) {
-      console.error('Lỗi dọn dẹp sessions:', sessErr.message);
+      logger.logServerError(req, 'cleanup_sessions_after_password_change', sessErr);
     }
 
     // Hủy session hiện tại phía server và xóa cookie
     req.session.destroy((err) => {
       if (err) {
-        console.error('Lỗi hủy session:', err.message);
+        logger.logServerError(req, 'destroy_session_after_password_change', err);
       }
       res.clearCookie('connect.sid');
       res.json({ message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.' });
     });
 
   } catch (error) {
-    console.error('Lỗi đổi mật khẩu:', error.message);
-    res.status(500).json({ error: 'Lỗi máy chủ nội bộ' });
+    return logger.sendServerError(res, req, 'change_password', error);
   }
 });
 

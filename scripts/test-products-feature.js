@@ -61,6 +61,7 @@ async function runTests() {
     env: {
       ...process.env,
       PORT: String(PORT),
+      METRICS_PORT: '0',
       DB_NAME: 'pos_store_test',
       SESSION_SECRET: 'test_products_secret_999'
     }

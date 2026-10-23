@@ -20,6 +20,26 @@ function formatDateTimeVN(dateVal) {
   });
 }
 
+function getTodayDateVN() {
+  try {
+    const formatter = new Intl.DateTimeFormat('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+    return formatter.format(new Date());
+  } catch (e) {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const vnDate = new Date(utc + (3600000 * 7));
+    const day = String(vnDate.getDate()).padStart(2, '0');
+    const month = String(vnDate.getMonth() + 1).padStart(2, '0');
+    const year = vnDate.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+}
+
 function formatDateVN(dateStr) {
   if (!dateStr) return '';
   // dateStr: YYYY-MM-DD
@@ -40,6 +60,8 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+let isDashboardInitialLoad = true;
+
 async function loadDashboard() {
   const loadingEl = document.getElementById('dashboard-loading');
   const contentEl = document.getElementById('dashboard-content');
@@ -47,12 +69,17 @@ async function loadDashboard() {
   const errorTextEl = document.getElementById('dashboard-error-text');
   const refreshBtn = document.getElementById('btn-refresh-dashboard');
 
-  if (loadingEl) loadingEl.classList.remove('d-none');
-  if (contentEl) contentEl.classList.add('d-none');
+  // Nếu là lần đầu mở trang (chưa có dữ liệu), hiển thị màn hình tải
+  if (isDashboardInitialLoad) {
+    if (loadingEl) loadingEl.classList.remove('d-none');
+    if (contentEl) contentEl.classList.add('d-none');
+  }
+  // Khi làm mới (đã có dữ liệu), giữ nguyên dữ liệu hiện có trên màn hình
   if (errorEl) errorEl.classList.add('d-none');
+
   if (refreshBtn) {
     refreshBtn.disabled = true;
-    refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang tải...';
+    refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1 spin-animation"></i> Đang cập nhật…';
   }
 
   try {
@@ -61,7 +88,12 @@ async function loadDashboard() {
       if (res && res.status === 403) {
         throw new Error('Chỉ Quản lý (MANAGER) mới có quyền truy cập dữ liệu thống kê tổng quan.');
       }
-      throw new Error(`Máy chủ phản hồi mã lỗi ${res ? res.status : 'không xác định'}`);
+      let errMsg = `Máy chủ phản hồi mã lỗi ${res ? res.status : 'không xác định'}`;
+      try {
+        const errJson = await res.json();
+        errMsg = window.formatApiError(errJson, errMsg);
+      } catch (e) {}
+      throw new Error(errMsg);
     }
 
     const data = await res.json();
@@ -69,7 +101,7 @@ async function loadDashboard() {
     // 1. Cập nhật ngày hôm nay theo Asia/Ho_Chi_Minh
     const todayLabel = document.getElementById('today-date-label');
     if (todayLabel) {
-      todayLabel.textContent = formatDateVN(data.date);
+      todayLabel.textContent = data.date ? formatDateVN(data.date) : getTodayDateVN();
     }
 
     // 2. Cập nhật các thẻ số liệu
@@ -96,10 +128,12 @@ async function loadDashboard() {
 
     if (loadingEl) loadingEl.classList.add('d-none');
     if (contentEl) contentEl.classList.remove('d-none');
+    isDashboardInitialLoad = false;
 
   } catch (err) {
     console.error('Lỗi khi tải dữ liệu tổng quan:', err);
     if (loadingEl) loadingEl.classList.add('d-none');
+    // Khi thất bại: giữ nguyên dữ liệu đang có (nếu đã tải), hiển thị lỗi và cho phép thử lại
     if (errorEl) {
       if (errorTextEl) errorTextEl.textContent = err.message || 'Lỗi kết nối khi tải dữ liệu tổng quan.';
       errorEl.classList.remove('d-none');
@@ -197,12 +231,12 @@ function renderRecentInvoices(invoices) {
       <td>
         <small class="text-dark">${escapeHtml(inv.created_by_name || 'Thu ngân')}</small>
       </td>
-      <td class="text-end fw-bold text-danger">${amountStr}</td>
+      <td class="text-end fw-bold text-dark font-monospace">${amountStr}</td>
       <td>
         <small class="text-muted"><i class="bi bi-clock me-1"></i>${dateStr}</small>
       </td>
       <td class="text-center">
-        <button type="button" class="btn btn-outline-info btn-sm py-0 px-2" onclick="viewInvoiceDetail(${inv.id})" title="Xem chi tiết hóa đơn ${escapeHtml(inv.invoice_no)}">
+        <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" onclick="viewInvoiceDetail(${inv.id})" title="Xem chi tiết hóa đơn ${escapeHtml(inv.invoice_no)}">
           <i class="bi bi-eye"></i> Xem
         </button>
       </td>
@@ -271,8 +305,8 @@ async function viewInvoiceDetail(id) {
           <td class="fw-semibold text-dark">${escapeHtml(item.product_name_snapshot || 'Sản phẩm')}</td>
           <td class="text-center text-muted">${escapeHtml(item.unit_snapshot || 'Cái')}</td>
           <td class="text-center fw-bold text-primary">${item.quantity}</td>
-          <td class="text-end">${formatMoney(item.unit_price)}</td>
-          <td class="text-end fw-bold text-danger">${formatMoney(lineTotal)}</td>
+          <td class="text-end font-monospace">${formatMoney(item.unit_price)}</td>
+          <td class="text-end fw-bold text-dark font-monospace">${formatMoney(lineTotal)}</td>
         `;
         itemsTbody.appendChild(tr);
       });
@@ -292,6 +326,11 @@ async function viewInvoiceDetail(id) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const todayLabel = document.getElementById('today-date-label');
+  if (todayLabel) {
+    todayLabel.textContent = getTodayDateVN();
+  }
+
   loadDashboard();
 
   window.addEventListener('click', (e) => {

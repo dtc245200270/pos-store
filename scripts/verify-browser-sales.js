@@ -72,7 +72,7 @@ async function run() {
 
   // 2. Khởi động server test trên pos_store_test
   const serverProcess = spawn('node', ['server.js'], {
-    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_sales_ui_secret', PORT: String(TEST_PORT) }
+    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_sales_ui_secret', PORT: String(TEST_PORT), METRICS_PORT: '0' }
   });
 
   await new Promise((resolve) => {

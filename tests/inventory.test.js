@@ -34,8 +34,9 @@ test('Inventory & Stock Movements Comprehensive Tests', async (t) => {
 
       const schemaSql = require('fs').readFileSync('database/schema.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_inventory_test');
       const sessionSql = require('fs').readFileSync('database/migration_01_sessions.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_inventory_test');
+      const mig02Sql = require('fs').readFileSync('database/migration_02_payment_methods.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_inventory_test');
 
-      const parts = [...schemaSql.split(';'), ...sessionSql.split(';')].map(s => s.trim()).filter(s => s.length > 0);
+      const parts = [...schemaSql.split(';'), ...sessionSql.split(';'), ...mig02Sql.split(';')].map(s => s.trim()).filter(s => s.length > 0);
       const conn = await rootPool.getConnection();
       try {
         await conn.query('USE pos_store_inventory_test');
@@ -76,7 +77,7 @@ test('Inventory & Stock Movements Comprehensive Tests', async (t) => {
 
     return new Promise((resolve) => {
       serverProcess = spawn('node', ['server.js'], {
-        env: { ...process.env, DB_NAME: 'pos_store_inventory_test', SESSION_SECRET: 'test_inv_secret', PORT: '3004' }
+        env: { ...process.env, DB_NAME: 'pos_store_inventory_test', SESSION_SECRET: 'test_inv_secret', PORT: '3004', METRICS_PORT: '0' }
       });
       serverProcess.stdout.on('data', (data) => {
         if (data.toString().includes('Website đang chạy')) {
@@ -294,7 +295,137 @@ test('Inventory & Stock Movements Comprehensive Tests', async (t) => {
     assert.strictEqual(deleteRes.status, 405, 'Bị chặn 405 khi cố tình DELETE /api/inventory/:id');
   });
 
-  await t.test('10. Dọn dẹp máy chủ kiểm thử', async () => {
+  await t.test('10. Kiểm thử toàn diện Bộ lọc khoảng ngày cho Lịch sử biến động kho', async (t2) => {
+    // 10.1. Kiểm tra ngày không tồn tại và sai định dạng (HTTP 400 tiếng Việt)
+    const errInvalidDate = await req('GET', '/api/inventory/movements?from_date=2026-02-30', null, managerCookie);
+    assert.strictEqual(errInvalidDate.status, 400);
+    assert.strictEqual(errInvalidDate.data.error, 'Định dạng Từ ngày không hợp lệ hoặc không tồn tại trên lịch.');
+
+    const errInvalidToDate = await req('GET', '/api/inventory/1/movements?to_date=2026-04-31', null, managerCookie);
+    assert.strictEqual(errInvalidToDate.status, 400);
+    assert.strictEqual(errInvalidToDate.data.error, 'Định dạng Đến ngày không hợp lệ hoặc không tồn tại trên lịch.');
+
+    const errFormatDate = await req('GET', '/api/inventory/movements?from_date=abc', null, managerCookie);
+    assert.strictEqual(errFormatDate.status, 400);
+    assert.strictEqual(errFormatDate.data.error, 'Định dạng Từ ngày không hợp lệ hoặc không tồn tại trên lịch.');
+
+    // 10.2. Kiểm tra năm nhuận và không nhuận
+    // 2023 không phải năm nhuận -> 2023-02-29 không hợp lệ (HTTP 400)
+    const errNonLeap = await req('GET', '/api/inventory/movements?from_date=2023-02-29', null, managerCookie);
+    assert.strictEqual(errNonLeap.status, 400);
+
+    // 2024 là năm nhuận -> 2024-02-29 hợp lệ (HTTP 200, trả về mảng hợp lệ)
+    const resLeap = await req('GET', '/api/inventory/movements?from_date=2024-02-29&to_date=2024-02-29', null, managerCookie);
+    assert.strictEqual(resLeap.status, 200);
+    assert(Array.isArray(resLeap.data), 'Năm nhuận hợp lệ trả về mảng kết quả');
+
+    // 10.3. Kiểm tra khoảng ngày đảo ngược (Từ ngày > Đến ngày -> HTTP 400)
+    const errReversed = await req('GET', '/api/inventory/movements?from_date=2026-05-20&to_date=2026-05-10', null, managerCookie);
+    assert.strictEqual(errReversed.status, 400);
+    assert.strictEqual(errReversed.data.error, 'Từ ngày không được lớn hơn Đến ngày.');
+
+    const errReversedProd = await req('GET', '/api/inventory/1/movements?from_date=2026-05-20&to_date=2026-05-10', null, managerCookie);
+    assert.strictEqual(errReversedProd.status, 400);
+    assert.strictEqual(errReversedProd.data.error, 'Từ ngày không được lớn hơn Đến ngày.');
+
+    // 10.4. Thiết lập mốc thời gian biên đầu ngày (00:00:00) và cuối ngày (23:59:59) trong CSDL test
+    const testConn = await mysql.createConnection(testDbConfig);
+    try {
+      await testConn.query("UPDATE stock_movements SET created_at = '2026-05-15 00:00:00' WHERE id = 1");
+      await testConn.query("UPDATE stock_movements SET created_at = '2026-05-15 23:59:59' WHERE id = 2");
+    } finally {
+      await testConn.end();
+    }
+
+    // 10.5. Không nhập ngày: giữ hành vi hiện tại (trả về cả 2 giao dịch)
+    const resNoDate = await req('GET', '/api/inventory/movements', null, managerCookie);
+    assert.strictEqual(resNoDate.status, 200);
+    assert.strictEqual(resNoDate.data.length, 2);
+
+    const resProdNoDate = await req('GET', '/api/inventory/1/movements', null, managerCookie);
+    assert.strictEqual(resProdNoDate.status, 200);
+    assert.strictEqual(resProdNoDate.data.movements.length, 2);
+
+    // 10.6. Chỉ nhập Từ ngày (from_date):
+    // Từ 2026-05-15: phải bao gồm cả bản ghi 00:00:00 và 23:59:59
+    const resFromDateMatch = await req('GET', '/api/inventory/movements?from_date=2026-05-15', null, managerCookie);
+    assert.strictEqual(resFromDateMatch.status, 200);
+    assert.strictEqual(resFromDateMatch.data.length, 2);
+
+    // Từ 2026-05-16: không còn bản ghi nào
+    const resFromDateFuture = await req('GET', '/api/inventory/movements?from_date=2026-05-16', null, managerCookie);
+    assert.strictEqual(resFromDateFuture.status, 200);
+    assert.strictEqual(resFromDateFuture.data.length, 0);
+
+    // 10.7. Chỉ nhập Đến ngày (to_date):
+    // Đến 2026-05-15: bao gồm cả ngày 15 (< 2026-05-16 00:00:00) -> lấy đủ 2 bản ghi
+    const resToDateMatch = await req('GET', '/api/inventory/1/movements?to_date=2026-05-15', null, managerCookie);
+    assert.strictEqual(resToDateMatch.status, 200);
+    assert.strictEqual(resToDateMatch.data.movements.length, 2);
+
+    // Đến 2026-05-14: trước ngày 15 -> không có bản ghi nào
+    const resToDatePast = await req('GET', '/api/inventory/1/movements?to_date=2026-05-14', null, managerCookie);
+    assert.strictEqual(resToDatePast.status, 200);
+    assert.strictEqual(resToDatePast.data.movements.length, 0);
+
+    // 10.8. Khoảng ngày hợp lệ bao gồm trọn vẹn cả đầu ngày và cuối ngày:
+    const resExactDay = await req('GET', '/api/inventory/movements?from_date=2026-05-15&to_date=2026-05-15', null, managerCookie);
+    assert.strictEqual(resExactDay.status, 200);
+    assert.strictEqual(resExactDay.data.length, 2, 'Lọc đúng ngày 2026-05-15 bao gồm cả 00:00:00 và 23:59:59');
+
+    // 10.9. Khoảng ngày không có giao dịch:
+    const resEmptyRange = await req('GET', '/api/inventory/movements?from_date=2026-05-01&to_date=2026-05-10', null, managerCookie);
+    assert.strictEqual(resEmptyRange.status, 200);
+    assert.strictEqual(resEmptyRange.data.length, 0, 'Khoảng ngày không có giao dịch trả về mảng rỗng');
+
+    // 10.10. Kết hợp ngày với từ khóa tìm kiếm (q) và sản phẩm cụ thể:
+    // Tìm mã hóa đơn 'HD-INV-001' trong ngày 2026-05-15 -> đúng 1 bản ghi
+    const resCombinedSearch = await req('GET', '/api/inventory/movements?from_date=2026-05-15&to_date=2026-05-15&q=HD-INV-001', null, managerCookie);
+    assert.strictEqual(resCombinedSearch.status, 200);
+    assert.strictEqual(resCombinedSearch.data.length, 1);
+    assert.strictEqual(resCombinedSearch.data[0].document_no, 'HD-INV-001');
+
+    // Lịch sử sản phẩm 1 trong ngày 2026-05-15 -> đủ 2 giao dịch
+    const resProdCombined = await req('GET', '/api/inventory/1/movements?from_date=2026-05-15&to_date=2026-05-15', null, managerCookie);
+    assert.strictEqual(resProdCombined.status, 200);
+    assert.strictEqual(resProdCombined.data.movements.length, 2);
+
+    // Tìm kiếm trong lịch sử sản phẩm 1:
+    // a. Bằng SKU sản phẩm ('SP_INV_TEST1')
+    const resProdBySku = await req('GET', '/api/inventory/1/movements?q=SP_INV_TEST1', null, managerCookie);
+    assert.strictEqual(resProdBySku.status, 200);
+    assert.strictEqual(resProdBySku.data.movements.length, 2, 'Tìm kiếm theo SKU trong lịch sử SP');
+
+    // b. Bằng Tên sản phẩm ('Node.js')
+    const resProdByName = await req('GET', '/api/inventory/1/movements?q=Node.js', null, managerCookie);
+    assert.strictEqual(resProdByName.status, 200);
+    assert.strictEqual(resProdByName.data.movements.length, 2, 'Tìm kiếm theo Tên trong lịch sử SP');
+
+    // c. Bằng Mã chứng từ phiếu nhập ('PN-INV-001')
+    const resProdByDoc = await req('GET', '/api/inventory/1/movements?q=PN-INV-001', null, managerCookie);
+    assert.strictEqual(resProdByDoc.status, 200);
+    assert.strictEqual(resProdByDoc.data.movements.length, 1);
+    assert.strictEqual(resProdByDoc.data.movements[0].document_no, 'PN-INV-001');
+
+    // d. Từ khóa không khớp -> trả về danh sách rỗng []
+    const resProdNoMatch = await req('GET', '/api/inventory/1/movements?q=KHONG_KHOP_XYZ_999', null, managerCookie);
+    assert.strictEqual(resProdNoMatch.status, 200);
+    assert.strictEqual(resProdNoMatch.data.movements.length, 0, 'Từ khóa không khớp phải trả danh sách rỗng');
+
+    // Lịch sử sản phẩm 2 (chưa có giao dịch) -> mảng rỗng
+    const resProd2 = await req('GET', '/api/inventory/2/movements?from_date=2026-05-15&to_date=2026-05-15', null, managerCookie);
+    assert.strictEqual(resProd2.status, 200);
+    assert.strictEqual(resProd2.data.movements.length, 0);
+
+    // 10.11. Thu ngân (CASHIER) gọi trực tiếp cả 2 API kèm ngày vẫn bị từ chối 403 Forbidden
+    const cashierAllWithDate = await req('GET', '/api/inventory/movements?from_date=2026-05-15&to_date=2026-05-15', null, cashierCookie);
+    assert.strictEqual(cashierAllWithDate.status, 403, 'CASHIER bị chặn khi gọi /api/inventory/movements');
+
+    const cashierProdWithDate = await req('GET', '/api/inventory/1/movements?from_date=2026-05-15&to_date=2026-05-15', null, cashierCookie);
+    assert.strictEqual(cashierProdWithDate.status, 403, 'CASHIER bị chặn khi gọi /api/inventory/1/movements');
+  });
+
+  await t.test('11. Dọn dẹp máy chủ kiểm thử', async () => {
     if (serverProcess) {
       serverProcess.kill();
     }

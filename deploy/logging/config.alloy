@@ -1,0 +1,60 @@
+logging {
+  level       = "info"
+  format      = "logfmt"
+  destination = "stderr"
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://127.0.0.1:3100/loki/api/v1/push"
+  }
+}
+
+
+// 1. Node.js POS Store Application Logs (JSON utf-8)
+local.file_match "node_logs" {
+  path_targets = [{
+    __path__ = "C:/Users/Dell Precision 5550/Documents/pos-store/logs/app.log",
+    app      = "pos_store",
+    source   = "node_backend",
+    env      = "development",
+  }]
+}
+
+loki.source.file "node_backend" {
+  targets       = local.file_match.node_logs.targets
+  forward_to    = [loki.write.default.receiver]
+  tail_from_end = false
+}
+
+// 2. Nginx Access Logs
+local.file_match "nginx_access" {
+  path_targets = [{
+    __path__ = "C:/nginx/logs/access.log",
+    app      = "pos_store",
+    source   = "nginx_access",
+    env      = "development",
+  }]
+}
+
+loki.source.file "nginx_access" {
+  targets       = local.file_match.nginx_access.targets
+  forward_to    = [loki.write.default.receiver]
+  tail_from_end = false
+}
+
+// 3. Nginx Error Logs
+local.file_match "nginx_error" {
+  path_targets = [{
+    __path__ = "C:/nginx/logs/error.log",
+    app      = "pos_store",
+    source   = "nginx_error",
+    env      = "development",
+  }]
+}
+
+loki.source.file "nginx_error" {
+  targets       = local.file_match.nginx_error.targets
+  forward_to    = [loki.write.default.receiver]
+  tail_from_end = false
+}

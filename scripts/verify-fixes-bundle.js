@@ -69,7 +69,7 @@ async function run() {
   // Khởi động server test trên cổng TEST_PORT kết nối tới pos_store_test
   console.log(`Khởi động server kiểm thử trên cổng ${TEST_PORT} (CSDL: pos_store_test)...`);
   const serverProcess = spawn('node', ['server.js'], {
-    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'bundle_secret_123', PORT: String(TEST_PORT) }
+    env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'bundle_secret_123', PORT: String(TEST_PORT), METRICS_PORT: '0' }
   });
 
   await new Promise((resolve) => {

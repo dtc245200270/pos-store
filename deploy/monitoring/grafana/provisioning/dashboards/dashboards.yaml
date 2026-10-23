@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: 'POS Store Monitoring'
+    orgId: 1
+    folder: 'POS Store'
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    options:
+      path: C:/grafana/conf/provisioning/dashboards
+      foldersFromFilesStructure: false
+    updateIntervalSeconds: 5

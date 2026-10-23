@@ -1,0 +1,44 @@
+<?php
+/*
+ * Cấu hình mẫu phpMyAdmin cho dự án POS Store (kết nối MySQL80)
+ * LƯU Ý: Đây là tệp mẫu, KHÔNG chứa mật khẩu hoặc mã bí mật thực tế.
+ */
+
+/* Khóa mã hóa cookie Blowfish Secret (Bắt buộc ít nhất 32 ký tự ngẫu nhiên khi đưa vào file thực tế) */
+$cfg['blowfish_secret'] = 'THAY_THE_BANG_32_KY_TU_NGAU_NHIEN_O_DAY';
+
+/* Cấu hình máy chủ MySQL */
+$i = 0;
+$i++;
+
+/* Chế độ xác thực bằng cookie: người dùng tự nhập tài khoản/mật khẩu trên trình duyệt */
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+
+/* Không lưu tài khoản hoặc mật khẩu trong file cấu hình */
+$cfg['Servers'][$i]['user'] = '';
+$cfg['Servers'][$i]['password'] = '';
+
+/* Không cho phép đăng nhập bằng mật khẩu trống */
+$cfg['Servers'][$i]['AllowNoPassword'] = false;
+
+/* Kết nối tới dịch vụ MySQL80 tại 127.0.0.1, cổng 3306 */
+$cfg['Servers'][$i]['host'] = '127.0.0.1';
+$cfg['Servers'][$i]['port'] = '3306';
+$cfg['Servers'][$i]['connect_type'] = 'tcp';
+$cfg['Servers'][$i]['extension'] = 'mysqli';
+$cfg['Servers'][$i]['compress'] = false;
+
+/* Vô hiệu hóa tính năng bảng cấu hình nâng cao phpmyadmin vì không tồn tại trên MySQL80 */
+/* Không sử dụng controluser/controlpass và không tự tạo bảng */
+$cfg['Servers'][$i]['controluser'] = '';
+$cfg['Servers'][$i]['controlpass'] = '';
+$cfg['Servers'][$i]['pmadb'] = '';
+
+/* Cài đặt chung & giới hạn */
+$cfg['UploadDir'] = '';
+$cfg['SaveDir'] = '';
+$cfg['SendErrorReports'] = 'never';
+$cfg['ShowPhpInfo'] = false;
+$cfg['VersionCheck'] = false;
+$cfg['ExecTimeLimit'] = 300;
+?>

@@ -36,8 +36,9 @@ test('POS Store Integration Tests', async (t) => {
       // Chạy schema thủ công cho test db
       const schemaSql = require('fs').readFileSync('database/schema.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_test');
       const sessionSql = require('fs').readFileSync('database/migration_01_sessions.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_test');
+      const mig02Sql = require('fs').readFileSync('database/migration_02_payment_methods.sql', 'utf-8').replace(/\bpos_store\b/g, 'pos_store_test');
 
-      const parts = [...schemaSql.split(';'), ...sessionSql.split(';')].map(s => s.trim()).filter(s => s.length > 0);
+      const parts = [...schemaSql.split(';'), ...sessionSql.split(';'), ...mig02Sql.split(';')].map(s => s.trim()).filter(s => s.length > 0);
       const conn = await rootPool.getConnection();
       try {
         await conn.query('USE pos_store_test');
@@ -66,7 +67,7 @@ test('POS Store Integration Tests', async (t) => {
     // 2. Khởi động server với env DB_NAME=pos_store_test
     return new Promise((resolve) => {
       serverProcess = spawn('node', ['server.js'], {
-        env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_secret', PORT: '3001' }
+        env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_secret', PORT: '3001', METRICS_PORT: '0' }
       });
       serverProcess.stdout.on('data', (data) => {
         console.log('[Server 3001]:', data.toString());

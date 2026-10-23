@@ -1,6 +1,7 @@
 const path = require('path');
 const crypto = require('crypto');
 const pool = require('../config/db');
+const logger = require('../config/logger');
 
 // Kiểm tra session hiện tại so với DB thực tế
 const verifySessionDB = async (req) => {
@@ -24,7 +25,7 @@ const verifySessionDB = async (req) => {
     req.session.isActive = user.is_active;
     return true;
   } catch (error) {
-    console.error('Lỗi verifySessionDB:', error.message);
+    logger.logServerError(req, 'verify_session_db', error);
     return false;
   }
 };
