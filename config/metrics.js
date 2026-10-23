@@ -107,6 +107,14 @@ function normalizeRoute(req) {
  * - Không làm mất requestId, không thay đổi phản hồi nghiệp vụ
  */
 function metricsMiddleware(req, res, next) {
+  const rawUrl = req.originalUrl || req.url || req.path || '/';
+  const pathname = rawUrl.split('?')[0].split('#')[0];
+
+  // Bỏ qua endpoint healthcheck nội bộ, không đưa vào counter hoặc histogram nghiệp vụ
+  if (pathname === '/healthz') {
+    return next();
+  }
+
   const startTime = process.hrtime.bigint();
 
   res.on('finish', () => {

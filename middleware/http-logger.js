@@ -1,6 +1,14 @@
 const logger = require('../config/logger');
 
 function httpLoggerMiddleware(req, res, next) {
+  const rawUrl = req.originalUrl || req.url || req.path || '/';
+  const pathOnly = rawUrl.split('?')[0];
+
+  // Bỏ qua hoàn toàn request healthcheck nội bộ
+  if (pathOnly === '/healthz') {
+    return next();
+  }
+
   const startTime = process.hrtime.bigint();
 
   res.on('finish', () => {

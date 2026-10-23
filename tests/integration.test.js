@@ -13,7 +13,7 @@ const testDbConfig = {
   database: 'pos_store_test'
 };
 
-const BASE_URL = 'http://127.0.0.1:3001';
+const BASE_URL = 'http://127.0.0.1:3099';
 
 test('POS Store Integration Tests', async (t) => {
   let serverProcess;
@@ -67,10 +67,10 @@ test('POS Store Integration Tests', async (t) => {
     // 2. Khởi động server với env DB_NAME=pos_store_test
     return new Promise((resolve) => {
       serverProcess = spawn('node', ['server.js'], {
-        env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_secret', PORT: '3001', METRICS_PORT: '0' }
+        env: { ...process.env, DB_NAME: 'pos_store_test', SESSION_SECRET: 'test_secret', PORT: '3099', METRICS_PORT: '0' }
       });
       serverProcess.stdout.on('data', (data) => {
-        console.log('[Server 3001]:', data.toString());
+        console.log('[Server 3099]:', data.toString());
         if (data.toString().includes('Website đang chạy')) {
           resolve();
         }

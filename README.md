@@ -10,8 +10,8 @@ Toàn bộ hệ sinh thái dịch vụ được đóng gói trong `compose.yaml`
 
 | Dịch vụ | Tên Container | Phiên bản Image | Cổng Container | Cổng Host (127.0.0.1) | Mục đích |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Nginx** | `pos-store-nginx` | `nginx:1.27.2-alpine` | `80` | `8080` | Reverse Proxy, chuyển tiếp backend, ghi access log kèm `req_id` |
-| **Node.js App** | `pos-store-app` | `pos-store-app:1.0.0` (base `node:20.18.0-alpine`) | `3000`, `9101` | `3000`, `9101` | Backend Express, API, phục vụ Prometheus metrics endpoint độc lập |
+| **Nginx** | `pos-store-nginx` | `nginx:1.27.2-alpine` | `80` | `8080` | Reverse Proxy, chuyển tiếp backend, ghi access log kèm `req_id` (tách riêng healthcheck `/healthz`) |
+| **Node.js App** | `pos-store-app` | `pos-store-app:1.0.0` (Single-stage Alpine) | `3000`, `9101` | `3000`, `9101` | Backend Express (Single-stage tối ưu vì là Node.js thuần JavaScript không cần compile step), phục vụ Prometheus metrics độc lập |
 | **MySQL** | `pos-store-mysql` | `mysql:8.0.40` | `3306` | `3307` | Cơ sở dữ liệu chính (dùng cổng 3307 để tránh xung đột MySQL Windows 3306) |
 | **phpMyAdmin** | `pos-store-phpmyadmin` | `phpmyadmin:5.2.1` | `80` | `8081` | Giao diện quản trị CSDL MySQL trực quan |
 | **Prometheus** | `pos-store-prometheus` | `prom/prometheus:v2.54.1` | `9090` | `9090` | Thu thập metrics từ `app:9101/metrics` mỗi 15s |
@@ -32,7 +32,11 @@ Sao chép cấu hình mẫu từ `.env.example`:
 ```bash
 cp .env.example .env
 ```
-Các tham số mặc định đã được cấu hình sẵn sàng cho Docker Compose (tự động kết nối `mysql:3306` nội bộ, cổng host `8080`, `3000`, `9101`, `8081`, `3307`, `9090`, `3001`, `3100`, `12345`).
+Thiết lập các biến bắt buộc trong file `.env` (Docker Compose sẽ báo lỗi và từ chối khởi động nếu thiếu các biến nhạy cảm này):
+- `MYSQL_ROOT_PASSWORD`: Mật khẩu tài khoản root MySQL
+- `DB_PASSWORD`: Mật khẩu tài khoản ứng dụng `pos_app`
+- `SESSION_SECRET`: Khóa bí mật ký phiên làm việc Express
+- `INITIAL_MANAGER_PASSWORD`: Mật khẩu khởi tạo cho tài khoản Quản lý `manager`
 
 ### 2.3. Khởi động hệ thống
 ```bash
@@ -42,19 +46,21 @@ docker compose up -d
 # Kiểm tra trạng thái sức khỏe (health status) của các container
 docker compose ps
 ```
-Khi khởi chạy lần đầu, container MySQL sẽ tự động nạp bản sao lưu dữ liệu `database/backups/pos_store_backup.sql` vào volume `pos_store_mysql_data`.
+> [!NOTE]
+> Khi khởi chạy lần đầu trên một bản clone mới với volume rỗng, MySQL sẽ tự động nạp schema rỗng từ `database/init/01_init_schema.sql` (file được Git theo dõi, chứa toàn bộ bảng và migrations). Cơ sở dữ liệu rỗng sẵn sàng hoạt động ngay lập tức mà không cần dữ liệu mẫu.
 
 ### 2.4. Truy cập các dịch vụ
 - **Website POS Store (qua Nginx Proxy):** [http://127.0.0.1:8080](http://127.0.0.1:8080)
-  - Tài khoản Quản lý: `manager` / Mật khẩu: `29072907`
+  - Tài khoản Quản lý: `manager` / Mật khẩu: Theo giá trị cấu hình `INITIAL_MANAGER_PASSWORD` trong `.env`
 - **Backend Node.js trực tiếp:** [http://127.0.0.1:3000](http://127.0.0.1:3000)
+- **Healthcheck ứng dụng & Nginx:** [http://127.0.0.1:8080/healthz](http://127.0.0.1:8080/healthz) (Tách biệt hoàn toàn khỏi metrics và log người dùng)
 - **Metrics Prometheus:** [http://127.0.0.1:9101/metrics](http://127.0.0.1:9101/metrics)
 - **phpMyAdmin:** [http://127.0.0.1:8081](http://127.0.0.1:8081)
-  - Máy chủ: `mysql` | Tên người dùng: `pos_app` | Mật khẩu: `290729`
+  - Máy chủ: `mysql` | Tên người dùng: Theo `DB_USER` (mặc định `pos_app`) | Mật khẩu: Theo `DB_PASSWORD` trong `.env`
 - **Prometheus Dashboard & Targets:** [http://127.0.0.1:9090](http://127.0.0.1:9090)
-  - Kiểm tra target: `http://127.0.0.1:9090/targets` (target `pos_store` trạng thái **UP**)
+  - Kiểm tra target: [http://127.0.0.1:9090/targets](http://127.0.0.1:9090/targets) (target `pos_store` luôn trạng thái **UP**)
 - **Grafana Dashboard:** [http://127.0.0.1:3001](http://127.0.0.1:3001)
-  - Đăng nhập: `admin` / `admin`
+  - Đăng nhập: Theo `GRAFANA_ADMIN_USER` và `GRAFANA_ADMIN_PASSWORD` trong `.env` (mặc định `admin` / `admin`)
   - Dashboard đã được nạp sẵn tại thư mục: **POS Store -> POS Store - Giám sát ứng dụng**
   - Datasource tự động cấu hình: `Prometheus` (mặc định) và `Loki`
 - **Grafana Alloy UI:** [http://127.0.0.1:12345](http://127.0.0.1:12345)
@@ -73,16 +79,24 @@ Hệ thống sử dụng các named volume độc lập, không bị mất dữ 
 - `pos_store_app_logs`: Thư mục chia sẻ log giữa Node.js backend và Alloy.
 - `pos_store_nginx_logs`: Thư mục chia sẻ access/error log giữa Nginx và Alloy.
 
-### 3.2. Nhập thủ công bản sao lưu vào CSDL Docker
-Nếu cần nạp lại bản sao lưu khác vào container MySQL:
-```bash
-docker compose exec -T mysql mysql -u pos_app -p290729 pos_store < database/backups/pos_store_backup.sql
+### 3.2. Sao lưu CSDL bằng PowerShell Windows (Bảo toàn UTF-8)
+Chạy script PowerShell an toàn, đọc mật khẩu trực tiếp từ `.env` và xuất file dump chuẩn UTF-8 (không bị lỗi format hay lệch encoding của PowerShell pipeline):
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/backup-database.ps1
 ```
+Mặc định file sao lưu sẽ được lưu tại `database/backups/pos_store_backup.sql`. Bản sao lưu dữ liệu thật này nằm trong `.gitignore` và không bị đưa lên Git.
 
-### 3.3. Xuất bản sao lưu mới từ CSDL Docker
-```bash
-docker compose exec -T mysql mysqldump -u pos_app -p290729 --no-tablespaces --single-transaction --quick --skip-lock-tables pos_store > database/backups/pos_store_new_backup.sql
+### 3.3. Phục hồi CSDL từ bản sao lưu (Tùy chọn)
+Nếu bạn có sẵn bản sao lưu dữ liệu thật và muốn nạp vào hệ thống:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/restore-database.ps1
 ```
+Hoặc chỉ định đường dẫn file sao lưu bất kỳ:
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/restore-database.ps1 -BackupFile "duong/dan/file_backup.sql"
+```
+> [!IMPORTANT]
+> Script sẽ **kiểm tra sự tồn tại của file sao lưu trước khi thực thi**. Nếu file không tồn tại, script sẽ báo lỗi rõ ràng và dừng lại ngay lập tức; tuyệt đối không tiếp tục âm thầm hoặc báo thành công giả. Quá trình nạp được thực hiện trực tiếp bên trong container nhằm bảo toàn 100% dữ liệu tiếng Việt có dấu.
 
 ---
 

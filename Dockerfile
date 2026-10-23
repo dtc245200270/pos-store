@@ -1,7 +1,15 @@
-# Dockerfile for POS Store Node.js Backend
+# ==============================================================================
+# Dockerfile cho POS Store Node.js Backend (Express)
+# Thiet ke: Single-stage Build
+# Ly do giu nguyen single-stage:
+#   1. Ung dung su dung Node.js / Express thuan JavaScript (CommonJS), khong qua buoc
+#      bien dich trung gian (khong co TypeScript, Babel hoac Webpack bundle).
+#   2. Su dung 'npm ci --omit=dev' de chi cai dat production dependencies can thiet.
+#   3. Image base Alpine gon nhe (~180MB) va thuc thi voi nguoi dung khong dac quyen (node).
+# ==============================================================================
 FROM node:20.18.0-alpine
 
-# Cai dat curl phuc vu container healthcheck
+# Cai dat curl phuc vu container healthcheck (/healthz)
 RUN apk add --no-cache curl
 
 WORKDIR /app

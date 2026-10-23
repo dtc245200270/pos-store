@@ -30,8 +30,16 @@ if (!process.env.SESSION_SECRET) {
   process.exit(1);
 }
 
-// 1. Cấp requestId và khởi động theo dõi HTTP request trước body-parsers và routes
+// 1. Cấp requestId cho toàn bộ request
 app.use(requestIdMiddleware);
+
+// Endpoint kiểm tra sức khỏe độc lập (healthcheck) cho Container orchestrator & Nginx
+// Phản hồi trực tiếp trước httpLoggerMiddleware và metricsMiddleware để không ô nhiễm log và metrics người dùng
+app.get('/healthz', (req, res) => {
+  res.status(200).type('text/plain').send('OK');
+});
+
+// 2. Khởi động theo dõi HTTP request và metrics cho lưu lượng người dùng / nghiệp vụ
 app.use(httpLoggerMiddleware);
 app.use(metricsMiddleware);
 
