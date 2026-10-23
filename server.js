@@ -28,8 +28,34 @@ const METRICS_HOST = process.env.METRICS_HOST || "0.0.0.0";
 // Vo hieu hoa header X-Powered-By de chong tiet lo cong nghe Express
 app.disable('x-powered-by');
 
-// Cau hinh trust proxy theo dung mo hinh Nginx reverse proxy (1 hop proxy phia truoc)
-app.set('trust proxy', 1);
+// Danh sach IP proxy duoc phep tin cay (Nginx reverse proxy hoac loopback)
+const dns = require('dns');
+const trustedProxyIps = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+function refreshNginxProxyIp() {
+  dns.lookup('nginx', { all: true }, (err, addresses) => {
+    if (!err && Array.isArray(addresses)) {
+      addresses.forEach((addr) => {
+        trustedProxyIps.add(addr.address);
+        trustedProxyIps.add(`::ffff:${addr.address}`);
+      });
+    }
+  });
+}
+refreshNginxProxyIp();
+const proxyRefreshTimer = setInterval(refreshNginxProxyIp, 15000);
+if (proxyRefreshTimer.unref) proxyRefreshTimer.unref();
+
+// Chinh sach Trust Proxy chat che:
+// - CHI tin cay hop proxy dau tien neu ket noi xuat phat tu Nginx container hoac loopback
+// - TUYET DOI KHONG tin cay header X-Forwarded-* khi client ket noi truc tiep vao cong 3000
+app.set('trust proxy', (ip, i) => {
+  if (i === 0) {
+    const cleanIp = String(ip).replace(/^::ffff:/, '');
+    return trustedProxyIps.has(cleanIp) || cleanIp === '127.0.0.1' || cleanIp === '::1';
+  }
+  return false;
+});
 
 if (!process.env.SESSION_SECRET) {
   console.error("Lỗi: Bắt buộc phải có SESSION_SECRET trong file .env");

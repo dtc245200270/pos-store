@@ -35,7 +35,11 @@ function httpLoggerMiddleware(req, res, next) {
         method: req.method,
         path: pathOnly,
         statusCode,
-        durationMs
+        durationMs,
+        clientIp: req.ip,
+        remoteIp: req.socket.remoteAddress,
+        protocol: req.protocol,
+        hostname: req.hostname
       };
 
       if (req.session && req.session.userId) {
