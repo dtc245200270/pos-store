@@ -291,7 +291,7 @@ async function runPipelineVerification() {
         'x-csrf-token': csrfData.csrfToken,
         'Cookie': sessionCookie
       },
-      body: JSON.stringify({ username: 'manager', password: '29072907' })
+      body: JSON.stringify({ username: 'manager', password: process.env.INITIAL_MANAGER_PASSWORD || 'ChangeThisStrongPass123!' })
     });
     if (loginRes.status !== 200) {
       throw new Error(`Dang nhap Manager that bai voi status: ${loginRes.status}`);
