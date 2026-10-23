@@ -217,3 +217,27 @@ Bản cài đặt trực tiếp trên Windows hoàn toàn được bảo toàn v
 
 ### F. Bộ kiểm thử tích hợp toàn diện (`npm test`)
 - 57/57 tests PASS với Node native test runner (`node --test`).
+
+---
+
+## 7. Cấu hình Bảo mật & Hardening Hệ thống (Production-Ready)
+
+Hệ thống đã hoàn thiện toàn diện các tiêu chuẩn Hardening cho môi trường Docker Compose. Chi tiết báo cáo đối chiếu trước/sau, bằng chứng kiểm tra và lộ trình HTTPS xem tại: [deploy/HARDENING.md](file:///c:/Users/Dell%20Precision%205550/Documents/pos-store/deploy/HARDENING.md).
+
+- **Security Headers**: Che giấu phiên bản Nginx (`server_tokens off`), loại bỏ header `X-Powered-By`, chuẩn hóa chống trùng lặp `Cache-Control`, bổ sung `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, và thiết lập `Content-Security-Policy` thích ứng đầy đủ với Bootstrap 5, Bootstrap Icons và mã QR ngân hàng VietQR.
+- **Bảo vệ Đăng nhập, Session & CSRF**:
+  - Giới hạn 5 lần đăng nhập sai theo tài khoản (khóa tạm 15 phút, trả về HTTP 429 kèm `Retry-After`).
+  - Bảo vệ tuyệt đối tài khoản hệ thống `manager` khỏi các thao tác sửa, khóa, xóa và reset mật khẩu.
+  - Cấu hình `trust proxy` 1 hop cho Express nhận đúng client IP qua Nginx proxy.
+  - Session cookie bảo vệ với `HttpOnly`, `SameSite: Lax`, thời hạn 24h, và cờ `secure` thích ứng tự động.
+  - Tái tạo session ID sau khi đăng nhập (`req.session.regenerate()`) chống Session Fixation.
+  - Hủy phiên hoàn toàn trong database và xóa cookie khi đăng xuất hoặc đổi mật khẩu.
+  - Bảo vệ CSRF Token ngẫu nhiên 32 bytes trên toàn bộ thao tác thay đổi dữ liệu.
+- **Quyền hạn Tối thiểu (Least Privilege)**:
+  - Tiến trình Node.js thực sự chạy với user phi đặc quyền `node` (uid=1000).
+  - Tất cả container đều có `Privileged=false`, không mount Docker socket, volume config đều là `:ro`.
+  - Tài khoản CSDL `pos_app` được thu hồi `ALL PRIVILEGES` và chỉ cấp các quyền nghiệp vụ cần thiết (`SELECT, INSERT, UPDATE, DELETE` trên `pos_store.*`).
+- **Giới hạn Truy cập Hạ tầng**:
+  - 100% cổng công bố ra host Windows đều gắn tiền tố `127.0.0.1:`, cô lập an toàn trong phạm vi localhost.
+- **Bộ kiểm thử xác minh Hardening tự động**:
+  - Chạy kiểm chứng: `node scripts/test-hardening-verification.js` (25/25 tiêu chí PASS).

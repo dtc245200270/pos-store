@@ -25,6 +25,12 @@ const HOST = process.env.HOST || "0.0.0.0";
 const METRICS_PORT = process.env.METRICS_PORT !== undefined ? Number(process.env.METRICS_PORT) : 9101;
 const METRICS_HOST = process.env.METRICS_HOST || "0.0.0.0";
 
+// Vo hieu hoa header X-Powered-By de chong tiet lo cong nghe Express
+app.disable('x-powered-by');
+
+// Cau hinh trust proxy theo dung mo hinh Nginx reverse proxy (1 hop proxy phia truoc)
+app.set('trust proxy', 1);
+
 if (!process.env.SESSION_SECRET) {
   console.error("Lỗi: Bắt buộc phải có SESSION_SECRET trong file .env");
   process.exit(1);
@@ -60,6 +66,14 @@ const sessionStore = new MySQLStore({
   createDatabaseTable: false // Vì pos_app không có quyền CREATE TABLE
 });
 
+// Thiet lap Secure cookie linh hoat:
+// - Mac dinh 'auto': Tu dong bat Secure neu ket noi qua HTTPS (thong qua trust proxy X-Forwarded-Proto),
+//   giu Secure=false khi chay localhost HTTP de khong lam mat cookie/session dang nhap.
+// - Co the ghi de bang bien moi truong COOKIE_SECURE (true/false) khi can thiet.
+const isCookieSecure = process.env.COOKIE_SECURE === 'true' 
+  ? true 
+  : (process.env.COOKIE_SECURE === 'false' ? false : 'auto');
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -68,7 +82,7 @@ app.use(session({
   cookie: {
     maxAge: 86400000,
     httpOnly: true,
-    secure: false, // Phải là false khi chạy localhost HTTP (môi trường dev/test)
+    secure: isCookieSecure,
     sameSite: 'lax'
   }
 }));

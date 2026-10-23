@@ -14,4 +14,7 @@ deploy/logging/artifacts
 scratch/
 coverage
 .DS_Store
+*.log
 pos-store-error.log
+*.bak
+database/backups

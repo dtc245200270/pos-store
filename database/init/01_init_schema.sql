@@ -206,3 +206,10 @@ CREATE TABLE IF NOT EXISTS sessions (
     data MEDIUMTEXT COLLATE utf8mb4_bin,
     PRIMARY KEY (session_id)
 ) ENGINE = InnoDB;
+
+-- 9. Hardening quyền MySQL cho tài khoản ứng dụng pos_app (Principle of Least Privilege)
+-- Khi MySQL entrypoint khởi tạo, mặc định pos_app được cấp ALL PRIVILEGES.
+-- Lệnh dưới đây thu hồi quyền quản trị/cấu trúc (DROP, ALTER, CREATE, GRANT...) và chỉ giữ lại quyền CRUD cần thiết cho runtime.
+REVOKE ALL PRIVILEGES, GRANT OPTION FROM 'pos_app'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON `pos_store`.* TO 'pos_app'@'%';
+FLUSH PRIVILEGES;
