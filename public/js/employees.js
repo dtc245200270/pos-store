@@ -105,6 +105,10 @@ function showAddEmployeeModal() {
 function showEditEmployeeModal(id) {
   const emp = allEmployees.find(x => x.id === id);
   if (!emp) return;
+  // Chặn mở form sửa đối với tài khoản hệ thống
+  if (emp.is_system || (emp.username && emp.username.toLowerCase() === 'manager')) {
+    return;
+  }
 
   document.getElementById('edit-e-id').value = emp.id;
   document.getElementById('edit-e-username').value = emp.username;
@@ -124,6 +128,10 @@ function showEditEmployeeModal(id) {
 function showResetPassModal(id) {
   const emp = allEmployees.find(x => x.id === id);
   if (!emp) return;
+  // Chặn mở form đặt lại mật khẩu đối với tài khoản hệ thống
+  if (emp.is_system || (emp.username && emp.username.toLowerCase() === 'manager')) {
+    return;
+  }
 
   document.getElementById('rp-id').value = emp.id;
   document.getElementById('rp-username').textContent = `${emp.full_name} (${emp.username})`;
@@ -207,12 +215,11 @@ function renderEmployeeTable(employees) {
     const lockActionIcon = e.is_active ? 'bi-lock me-2 text-warning' : 'bi-unlock me-2 text-success';
     const nextStatus = !e.is_active;
 
-    tr.innerHTML = `
-      <td class="ps-3 fw-semibold font-monospace">${escapeHtml(e.username)}</td>
-      <td class="fw-medium">${escapeHtml(e.full_name)}</td>
-      <td>${roleBadge}</td>
-      <td>${statusBadge}</td>
-      <td class="text-end pe-3">
+    const isSystem = Boolean(e.is_system || (e.username && e.username.toLowerCase() === 'manager'));
+
+    const actionCellHtml = isSystem
+      ? `<span class="badge bg-light text-secondary border fw-normal py-1 px-2"><i class="bi bi-shield-lock text-primary me-1"></i>Tài khoản hệ thống — được bảo vệ</span>`
+      : `
         <div class="d-flex justify-content-end align-items-center gap-1">
           <button class="btn btn-sm btn-outline-primary" onclick="showEditEmployeeModal(${e.id})" title="Sửa thông tin nhân viên">
             <i class="bi bi-pencil me-1"></i>Sửa
@@ -241,6 +248,15 @@ function renderEmployeeTable(employees) {
             </ul>
           </div>
         </div>
+      `;
+
+    tr.innerHTML = `
+      <td class="ps-3 fw-semibold font-monospace">${escapeHtml(e.username)}</td>
+      <td class="fw-medium">${escapeHtml(e.full_name)}</td>
+      <td>${roleBadge}</td>
+      <td>${statusBadge}</td>
+      <td class="text-end pe-3">
+        ${actionCellHtml}
       </td>
     `;
     tbody.appendChild(tr);
@@ -308,7 +324,12 @@ async function submitAddEmployee() {
 
 // 8. Gửi form Sửa Nhân Viên
 async function submitEditEmployee() {
-  const id = document.getElementById('edit-e-id').value;
+  const id = Number(document.getElementById('edit-e-id').value);
+  const emp = allEmployees.find(x => x.id === id);
+  if (emp && (emp.is_system || (emp.username && emp.username.toLowerCase() === 'manager'))) {
+    closeModal('edit-employee-modal');
+    return;
+  }
   const full_name = document.getElementById('edit-e-fullname').value.trim();
   const role = document.getElementById('edit-e-role').value;
 
@@ -350,7 +371,12 @@ async function submitEditEmployee() {
 
 // 9. Gửi form Đặt Lại Mật Khẩu
 async function submitResetPassword() {
-  const id = document.getElementById('rp-id').value;
+  const id = Number(document.getElementById('rp-id').value);
+  const emp = allEmployees.find(x => x.id === id);
+  if (emp && (emp.is_system || (emp.username && emp.username.toLowerCase() === 'manager'))) {
+    closeModal('reset-pass-modal');
+    return;
+  }
   const password = document.getElementById('rp-password').value;
   const confirm_password = document.getElementById('rp-confirm-password').value;
 
@@ -399,6 +425,11 @@ async function submitResetPassword() {
 
 // 10. Khóa / Mở khóa tài khoản (có hộp thoại xác nhận)
 async function toggleLock(id, nextStatus, username) {
+  const emp = allEmployees.find(x => x.id === id);
+  if (emp && (emp.is_system || (emp.username && emp.username.toLowerCase() === 'manager'))) {
+    alert('Tài khoản quản trị hệ thống được bảo vệ, không thể thay đổi trạng thái.');
+    return;
+  }
   const actionText = nextStatus ? 'mở khóa' : 'khóa';
   const confirmed = confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản "${username}" không?`);
   if (!confirmed) return;
@@ -422,6 +453,11 @@ async function toggleLock(id, nextStatus, username) {
 
 // 11. Xóa tài khoản (có hộp thoại xác nhận và bảo vệ chứng từ)
 async function deleteEmployee(id, username) {
+  const emp = allEmployees.find(x => x.id === id);
+  if (emp && (emp.is_system || (emp.username && emp.username.toLowerCase() === 'manager'))) {
+    alert('Tài khoản quản trị hệ thống được bảo vệ, không thể xóa.');
+    return;
+  }
   const confirmed = confirm(`Bạn có chắc chắn muốn xóa tài khoản "${username}" không?\nLưu ý: Không thể xóa tài khoản đã có chứng từ (hóa đơn hoặc phiếu nhập).`);
   if (!confirmed) return;
 

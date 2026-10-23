@@ -6,6 +6,14 @@ const logger = require('../../config/logger');
 
 const router = express.Router();
 
+// Định danh tài khoản quản trị hệ thống phía server (không dựa vào họ tên hay dữ liệu client)
+const SYSTEM_ADMIN_USERNAME = (process.env.SYSTEM_ADMIN_USERNAME || 'manager').trim().toLowerCase();
+
+function isSystemAdmin(username) {
+  if (!username) return false;
+  return String(username).trim().toLowerCase() === SYSTEM_ADMIN_USERNAME;
+}
+
 // Tất cả endpoints của employees chỉ dành riêng cho MANAGER
 router.use(requireRole('MANAGER'));
 
@@ -30,7 +38,11 @@ router.get('/', async (req, res) => {
 
     query += ' ORDER BY created_at DESC';
     const [rows] = await pool.query(query, params);
-    res.json(rows);
+    const result = rows.map(user => ({
+      ...user,
+      is_system: isSystemAdmin(user.username)
+    }));
+    res.json(result);
   } catch (error) {
     return logger.sendServerError(res, req, 'get_employees', error);
   }
@@ -61,6 +73,10 @@ router.post('/', async (req, res) => {
   }
 
   try {
+    if (isSystemAdmin(cleanUsername)) {
+      return res.status(400).json({ error: 'Tên đăng nhập này được dành riêng cho tài khoản hệ thống' });
+    }
+
     // Kiểm tra tên đăng nhập duy nhất
     const [existing] = await pool.query('SELECT id FROM users WHERE LOWER(username) = LOWER(?)', [cleanUsername]);
     if (existing.length > 0) {
@@ -111,6 +127,12 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy tài khoản nhân viên' });
     }
     const targetUser = users[0];
+
+    // Chặn mọi thao tác sửa thông tin, đổi hoặc hạ vai trò đối với tài khoản quản trị hệ thống
+    if (isSystemAdmin(targetUser.username)) {
+      await connection.rollback();
+      return res.status(403).json({ error: 'Tài khoản quản trị hệ thống được bảo vệ, không thể chỉnh sửa thông tin hoặc vai trò' });
+    }
 
     const targetRole = role || targetUser.role;
     if (targetRole !== 'MANAGER' && targetRole !== 'CASHIER') {
@@ -181,6 +203,12 @@ router.patch('/:id/toggle-active', async (req, res) => {
     }
     const targetUser = users[0];
 
+    // Chặn mọi thao tác khóa / vô hiệu hóa / thay đổi trạng thái đối với tài khoản quản trị hệ thống
+    if (isSystemAdmin(targetUser.username)) {
+      await connection.rollback();
+      return res.status(403).json({ error: 'Tài khoản quản trị hệ thống được bảo vệ, không thể thay đổi trạng thái hoạt động' });
+    }
+
     // Khi thực hiện KHÓA tài khoản (newStatus === 0)
     if (newStatus === 0) {
       // 1. Không cho khóa quản lý hoạt động cuối cùng
@@ -242,6 +270,11 @@ router.patch('/:id/reset-password', async (req, res) => {
     }
     const targetUser = users[0];
 
+    // Chặn đặt lại mật khẩu tài khoản quản trị hệ thống qua API quản lý nhân viên
+    if (isSystemAdmin(targetUser.username)) {
+      return res.status(403).json({ error: 'Không thể đặt lại mật khẩu của tài khoản quản trị hệ thống qua giao diện quản lý nhân viên' });
+    }
+
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
@@ -285,7 +318,7 @@ router.delete('/:id', async (req, res) => {
     );
 
     const [users] = await connection.query(
-      'SELECT id, role, is_active FROM users WHERE id = ? FOR UPDATE',
+      'SELECT id, username, role, is_active FROM users WHERE id = ? FOR UPDATE',
       [id]
     );
     if (users.length === 0) {
@@ -293,6 +326,12 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Không tìm thấy tài khoản' });
     }
     const targetUser = users[0];
+
+    // Chặn xóa tài khoản quản trị hệ thống
+    if (isSystemAdmin(targetUser.username)) {
+      await connection.rollback();
+      return res.status(403).json({ error: 'Tài khoản quản trị hệ thống được bảo vệ, không thể xóa' });
+    }
 
     // 1. Không cho xóa quản lý cuối cùng
     if (targetUser.role === 'MANAGER') {
