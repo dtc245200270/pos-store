@@ -1,3 +1,24 @@
+/**
+ * POS Store - Bộ Kiểm Thử Tổng Quan Thống Kê Bảng Điều Khiển (Dashboard Stats Tests)
+ * Đường dẫn: tests/dashboard.test.js
+ *
+ * Điều kiện chuẩn bị:
+ * - Tạo cơ sở dữ liệu kiểm thử cô lập 'pos_store_dashboard_test' và nạp toàn bộ cấu trúc bảng.
+ * - Khởi động máy chủ ứng dụng độc lập trên cổng 3005.
+ *
+ * Thao tác kiểm tra:
+ * - Kiểm tra phân quyền truy cập: Chặn người dùng chưa đăng nhập (401) hoặc vai trò CASHIER (403).
+ * - Kiểm tra số liệu doanh thu hôm nay, số lượng hóa đơn lập trong ngày theo múi giờ Việt Nam (+07:00).
+ * - Kiểm tra danh sách và số lượng cảnh báo mặt hàng tồn kho thấp (ngưỡng stock <= 10).
+ * - Kiểm tra biểu đồ doanh thu 7 ngày gần nhất tính toán đầy đủ các ngày không có giao dịch (giá trị 0 đ).
+ *
+ * Kết quả mong đợi:
+ * - Trả về đúng mã HTTP, số liệu tổng hợp chính xác theo logic thời gian thực và phân quyền nghiêm ngặt.
+ *
+ * Bước dọn dẹp:
+ * - Tắt máy chủ cổng 3005 và xóa cơ sở dữ liệu kiểm thử pos_store_dashboard_test.
+ */
+
 require('dotenv').config();
 const test = require('node:test');
 const assert = require('node:assert');

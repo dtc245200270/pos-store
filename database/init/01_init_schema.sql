@@ -1,14 +1,17 @@
--- ============================================================================
--- POS STORE - INITIAL DATABASE SCHEMA FOR FRESH INSTALLATIONS / CLONES
--- ============================================================================
--- File nay duoc Git theo doi de dung co so du lieu rong khi clone du an moi.
--- Bao gom toan bo schema goc va cac migrations da thuc hien:
---   1. Schema goc (users, products, invoices, invoice_items, stock_receipts,
---      stock_receipt_items, stock_movements)
---   2. Migration 01: Bang sessions cho express-mysql-session
---   3. Migration 02: Cac cot thanh toan (payment_method, transfer_content,
---      transfer_confirmed_at) trong bang invoices
--- ============================================================================
+-- ==============================================================================
+-- DỰ ÁN POS STORE - KHỞI TẠO CƠ SỞ DỮ LIỆU ĐẦY ĐỦ CHO DOCKER CONTAINER
+-- ==============================================================================
+-- Tệp: database/init/01_init_schema.sql
+-- Mục đích:
+--   - Được tự động thực thi bởi MySQL Docker container khi khởi tạo volume dữ liệu lần đầu
+--     (gắn qua bind mount: ./database/init:/docker-entrypoint-initdb.d:ro trong compose.yaml).
+--   - Tổng hợp đầy đủ cấu trúc dữ liệu hoàn chỉnh của dự án POS Store:
+--       1. Toàn bộ 7 bảng cốt lõi (users, products, invoices, invoice_items,
+--          stock_receipts, stock_receipt_items, stock_movements).
+--       2. Bảng sessions phục vụ lưu trữ phiên làm việc của express-mysql-session.
+--       3. Các trường phương thức thanh toán VietQR trong bảng invoices (payment_method,
+--          transfer_content, transfer_confirmed_at).
+-- ==============================================================================
 
 CREATE DATABASE IF NOT EXISTS pos_store
     CHARACTER SET utf8mb4

@@ -1,3 +1,26 @@
+/**
+ * POS Store - Bộ Kiểm Thử Quản Lý Danh Mục Sản Phẩm (Products Management Tests)
+ * Đường dẫn: tests/products.test.js
+ *
+ * Điều kiện chuẩn bị:
+ * - Khởi tạo cơ sở dữ liệu kiểm thử cô lập 'pos_store_products_test' và nạp cấu trúc bảng.
+ * - Khởi động máy chủ ứng dụng độc lập trên cổng 3002.
+ *
+ * Thao tác kiểm tra:
+ * - Kiểm tra tạo mới sản phẩm: Kiểm tra bắt buộc các trường, tính duy nhất của mã SKU, giá bán hợp lệ (> 0).
+ * - Kiểm tra tồn kho khởi tạo: Khi tạo sản phẩm mới, số lượng tồn kho mặc định luôn bằng 0 (không cho phép nhập trực tiếp).
+ * - Kiểm tra cập nhật sản phẩm: Đổi tên, đơn vị tính, giá bán, bật/tắt trạng thái kinh doanh is_active.
+ * - Kiểm tra ràng buộc xóa (ON DELETE RESTRICT):
+ *   + Sản phẩm chưa từng phát sinh chứng từ nhập/xuất: Cho phép xóa hoàn toàn khỏi hệ thống (200 OK).
+ *   + Sản phẩm đã từng có trong hóa đơn hoặc phiếu nhập: Bị từ chối xóa với lỗi 400 và hướng dẫn chuyển sang ngừng kinh doanh.
+ *
+ * Kết quả mong đợi:
+ * - Bảo đảm tính toàn vẹn dữ liệu, không có sản phẩm mồ côi và không vi phạm ràng buộc toàn vẹn khóa ngoại.
+ *
+ * Bước dọn dẹp:
+ * - Dừng tiến trình máy chủ cổng 3002 và xóa database pos_store_products_test.
+ */
+
 require('dotenv').config();
 const test = require('node:test');
 const assert = require('node:assert');

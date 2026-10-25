@@ -1,3 +1,19 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - GIAO DIỆN QUẢN LÝ NHÂN VIÊN (EMPLOYEES FRONTEND)
+ * ==============================================================================
+ * Tệp: public/js/employees.js
+ * Mục đích:
+ *   - Điều khiển tương tác trên trang Quản lý nhân viên (views/employees.html).
+ *   - Các chức năng:
+ *       1. Tải và hiển thị danh sách tài khoản, tìm kiếm theo tên, lọc theo trạng thái hoạt động.
+ *       2. Tạo mới tài khoản (Thu ngân / Quản lý) với mật khẩu tối thiểu 8 ký tự.
+ *       3. Chỉnh sửa thông tin nhân viên, khóa/mở khóa tài khoản (toggle active).
+ *       4. Đặt lại mật khẩu nhân viên, xóa tài khoản (chỉ khi chưa có chứng từ phát sinh).
+ *   - Tự động nhận diện và bảo vệ tài khoản hệ thống (ẩn các nút khóa, sửa, xóa khi `is_system === true`).
+ * ==============================================================================
+ */
+
 let allEmployees = [];
 let tableDropdownInstances = [];
 

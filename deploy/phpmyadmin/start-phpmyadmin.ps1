@@ -1,5 +1,13 @@
-﻿# Script khởi chạy phpMyAdmin trên PowerShell (Cổng 8081)
-# Xử lý đường dẫn chứa khoảng trắng
+﻿<#
+.SYNOPSIS
+    Kịch bản khởi chạy máy chủ phpMyAdmin trên PowerShell cho dự án POS Store.
+.DESCRIPTION
+    Đường dẫn: deploy/phpmyadmin/start-phpmyadmin.ps1
+    Mục đích:
+    - Kiểm tra sự tồn tại của tệp thực thi php.exe và thư mục phpMyAdmin.
+    - Kiểm tra trạng thái cổng 8081: nếu đã có tiến trình chiếm cổng thì dừng và thông báo cảnh báo.
+    - Khởi chạy PHP Built-in Server lắng nghe tại địa chỉ 127.0.0.1:8081 phục vụ giao diện quản trị CSDL.
+#>
 
 $phpExe = "C:\xampp\php\php.exe"
 $pmaDir = "C:\xampp\phpMyAdmin"

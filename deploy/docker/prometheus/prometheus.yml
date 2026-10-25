@@ -1,5 +1,13 @@
-# Cau hinh Prometheus cho POS Store (Docker)
-# Scrape endpoint metrics Node.js tai: app:9101/metrics moi 15 giay
+# ==============================================================================
+# POS Store - Cấu Hình Máy Chủ Thu Thập Số Liệu Prometheus (Docker)
+# Tệp: deploy/docker/prometheus/prometheus.yml
+#
+# Mục đích:
+# - Thu thập định kỳ số liệu hiệu năng từ máy chủ Node.js Express (cổng 9101, đường dẫn /metrics).
+# - Chu kỳ lấy mẫu (scrape_interval): 15 giây một lần, thời gian chờ tối đa (scrape_timeout): 10 giây.
+# - Chu kỳ đánh giá cảnh báo (evaluation_interval): 15 giây.
+# - Gắn nhãn tự động cho tất cả số liệu: app="pos_store", env="development".
+# ==============================================================================
 
 global:
   scrape_interval: 15s

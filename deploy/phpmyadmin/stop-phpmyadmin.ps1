@@ -1,5 +1,14 @@
-﻿# Script dừng an toàn tiến trình phpMyAdmin tại cổng 8081
-# Chỉ dừng đúng tiến trình PHP phục vụ phpMyAdmin đã xác minh đầy đủ
+﻿<#
+.SYNOPSIS
+    Kịch bản dừng an toàn tiến trình phpMyAdmin tại cổng 8081.
+.DESCRIPTION
+    Đường dẫn: deploy/phpmyadmin/stop-phpmyadmin.ps1
+    Mục đích:
+    - Tìm kiếm tiến trình đang lắng nghe tại cổng 8081 qua Get-NetTCPConnection.
+    - Truy vấn thông tin chi tiết qua WMI/CIM: đường dẫn tệp thực thi (ExecutablePath) và dòng lệnh khởi chạy (CommandLine).
+    - Xác minh kép (Dual Verification): Chỉ dừng đúng tiến trình PHP trỏ tới thư mục phpMyAdmin của dự án POS Store.
+    - Tuyệt đối không dừng nhầm các tiến trình hệ thống, MySQL hoặc các website PHP khác.
+#>
 
 $port = 8081
 $expectedPhpPath = "C:\xampp\php\php.exe"

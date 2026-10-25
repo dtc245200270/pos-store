@@ -1,3 +1,20 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - API THỐNG KÊ BẢNG ĐIỀU KHIỂN (DASHBOARD ANALYTICS API)
+ * ==============================================================================
+ * Tệp: routes/api/dashboard.js
+ * Mục đích:
+ *   - Cung cấp các số liệu thống kê thời gian thực cho màn hình Dashboard của Quản lý.
+ *   - Nghiêm ngặt: Chỉ vai trò MANAGER mới có quyền gọi API này (CASHIER bị từ chối 403).
+ *   - Các chỉ số cung cấp:
+ *       1. Doanh thu và số hóa đơn bán hàng trong ngày (theo múi giờ Asia/Ho_Chi_Minh).
+ *          (Lưu ý: Tiền nhập hàng từ stock_receipts không được tính vào doanh thu bán).
+ *       2. Số sản phẩm đang kinh doanh (is_active = 1).
+ *       3. Số sản phẩm hết hàng hoặc sắp hết hàng theo ngưỡng threshold chỉ định.
+ *       4. Danh sách 10 hóa đơn gần nhất kèm thông tin người bán.
+ * ==============================================================================
+ */
+
 const express = require('express');
 const pool = require('../../config/db');
 const { requireLogin } = require('../../middleware/auth');

@@ -1,3 +1,14 @@
+/**
+ * POS Store - Kịch Bản Dọn Dẹp Dữ Liệu Mẫu / Kiểm Thử (Cleanup Sample Data Script)
+ * Đường dẫn: scripts/cleanup-sample-data.js
+ *
+ * Mục đích:
+ * - Dọn dẹp dữ liệu sản phẩm mẫu (SP001), các biến động kho, chi tiết hóa đơn, phiếu nhập mẫu liên quan.
+ * - Xóa tài khoản kiểm thử cashier1; bảo toàn tuyệt đối tài khoản quản lý (manager).
+ * - Sử dụng Transaction (beginTransaction / commit / rollback) để đảm bảo tính nguyên tử: nếu xảy ra
+ *   bất kỳ lỗi nào sẽ hoàn tác toàn bộ dữ liệu, bảo đảm tính toàn vẹn của cơ sở dữ liệu.
+ */
+
 require('dotenv').config();
 const pool = require('../config/db');
 

@@ -1,3 +1,22 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - QUẢN LÝ BÁN HÀNG VÀ HÓA ĐƠN (SALES, INVOICES & VIETQR API)
+ * ==============================================================================
+ * Tệp: routes/api/invoices.js
+ * Mục đích:
+ *   - Lập hóa đơn bán hàng cho thu ngân, hỗ trợ 2 hình thức: Tiền mặt (CASH) và Chuyển khoản QR (BANK_TRANSFER).
+ *   - Tích hợp chuẩn VietQR Quick Link tự động điền số tiền và nội dung chuyển khoản duy nhất.
+ *   - Quản lý quy trình thanh toán QR 2 bước:
+ *       1. Chuẩn bị (POST /prepare-qr): Kiểm tra tồn kho, đơn giá, sinh mã QR VietQR. KHÔNG tạo hóa đơn, KHÔNG trừ tồn kho.
+ *       2. Xác nhận tạo hóa đơn (POST /): Transaction toàn vẹn, khóa dòng sản phẩm bằng SELECT ... FOR UPDATE,
+ *          trừ tồn kho, lưu snapshot giá bán/tên/đơn vị tại thời điểm xuất hóa đơn, ghi sổ kho xuất hàng (stock_movements).
+ *   - Xử lý xung đột khi thanh toán QR: Nếu giá thay đổi hoặc hết hàng trong lúc khách đang quét mã, hệ thống rollback
+ *     và trả mã 409 Conflict kèm cảnh báo `reconciliation_required: true` để đối soát tài khoản ngân hàng.
+ *   - Phân quyền dữ liệu (Data Isolation): Thu ngân (CASHIER) chỉ được xem và tra cứu hóa đơn do chính mình lập;
+ *     Quản lý (MANAGER) được xem toàn bộ hóa đơn của cửa hàng và lọc theo từng nhân viên bán.
+ * ==============================================================================
+ */
+
 const express = require('express');
 const crypto = require('crypto');
 const pool = require('../../config/db');

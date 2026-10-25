@@ -1,6 +1,20 @@
-// Render phân tách layout theo vai trò: MANAGER (Sidebar bên trái) & CASHIER (Menu gọn phía trên)
-// Đảm bảo không có hiệu ứng giật khung, nháy sáng hay chớp trắng khi chuyển trang
-// Mục menu active sử dụng màu nền #0d6efd (định nghĩa trong /public/css/style.css)
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - ĐIỀU HƯỚNG VÀ DỰNG BỐ CỤC CHUNG (SHARED LAYOUT ENGINE)
+ * ==============================================================================
+ * Tệp: public/js/layout.js
+ * Mục đích:
+ *   - Tự động dựng bố cục giao diện phân tách theo vai trò:
+ *       1. Bố cục Quản lý (pos-manager-layout): Sidebar đa cấp bên trái (hỗ trợ thu gọn/mở rộng,
+ *          ghi nhớ trạng thái vào localStorage), Topbar hiển thị tên người dùng và dropdown tài khoản.
+ *       2. Bố cục Thu ngân (pos-cashier-layout): Thanh Navbar tinh gọn phía trên, tối ưu không gian thao tác bán hàng.
+ *   - Đánh dấu mục menu active theo URL hiện tại (sử dụng màu nhận diện #0d6efd).
+ *   - Cơ chế bất đồng bộ không gây giật màn hình:
+ *       + Bước 1: `renderLayoutSync()` đọc cache localStorage và dựng khung giao diện tức thì.
+ *       + Bước 2: `syncUserInfoAsync()` gọi API /api/auth/me để cập nhật họ tên/vai trò thực tế từ backend.
+ *   - Tiện ích bảo mật: `escapeHtml()` chống XSS khi render chuỗi người dùng nhập.
+ * ==============================================================================
+ */
 
 function getSafeLocalStorage(key) {
   try {

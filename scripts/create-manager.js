@@ -1,3 +1,14 @@
+/**
+ * POS Store - Kịch Bản Khởi Tạo Tài Khoản Quản Lý Ban Đầu (Create Initial Manager)
+ * Đường dẫn: scripts/create-manager.js
+ *
+ * Mục đích:
+ * - Đọc mật khẩu quản trị ban đầu từ biến môi trường INITIAL_MANAGER_PASSWORD trong tệp .env.
+ * - Kiểm tra độ phức tạp của mật khẩu (tối thiểu 12 ký tự, không vượt quá 72 bytes UTF-8 theo giới hạn thuật toán bcrypt).
+ * - Kiểm tra tính duy nhất: nếu tài khoản 'manager' đã tồn tại trong database thì bỏ qua để tránh ghi đè.
+ * - Mã hóa mật khẩu với bcrypt salt 10 vòng và lưu vào bảng users với vai trò MANAGER.
+ */
+
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const pool = require("../config/db");

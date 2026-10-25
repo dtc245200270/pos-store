@@ -1,8 +1,15 @@
-# Script dung an toan he thong giam sat Prometheus va Grafana tren Windows
-# Chi dung dung tien trinh Prometheus va Grafana da xac minh chinh xac
-# Tuyet doi khong dung chuong trinh khac, khong quet cmd ngau nhien
-# Tra exit code 0 khi toan bo tien trinh da dung va cong da duoc giai phong
-# Tra exit code 1 neu khong the xac minh, khong the dung hoac cong khong duoc giai phong
+﻿<#
+.SYNOPSIS
+    Kịch bản dừng an toàn hệ thống giám sát Prometheus và Grafana trên Windows.
+.DESCRIPTION
+    Đường dẫn: deploy/monitoring/stop-monitoring.ps1
+    Mục đích:
+    - Tìm kiếm và xác minh chính xác tiến trình Prometheus (cổng 9090) và Grafana (cổng 3030).
+    - Áp dụng kiểm tra kép: ExecutablePath phải thuộc C:\prometheus\ hoặc C:\grafana\ và CommandLine chứa đúng tệp cấu hình POS Store.
+    - Dừng tiến trình mục tiêu bằng Stop-Process -Force sau khi đã xác minh danh tính.
+    - Chờ và kiểm tra thực tế: xác nhận tiến trình theo PID đã kết thúc hoàn toàn và cổng mạng đã được giải phóng (Get-NetTCPConnection = null).
+    - Trả exit code 0 khi hoàn tất thành công; không can thiệp vào bất kỳ tiến trình nào khác.
+#>
 
 $ErrorActionPreference = 'Stop'
 

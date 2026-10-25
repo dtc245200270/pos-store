@@ -1,3 +1,13 @@
+# ==============================================================================
+# POS Store - Cấu Hình Nguồn Dữ Liệu Tự Động Cho Grafana (Docker Provisioning)
+# Tệp: deploy/docker/grafana/provisioning/datasources/datasources.yaml
+#
+# Mục đích:
+# - Khai báo tự động 2 Datasource chính cho Grafana khi khởi động:
+#   1. Prometheus: http://prometheus:9090 (nguồn số liệu hiệu năng, chu kỳ 15s, làm mặc định).
+#   2. Loki: http://loki:3100 (nguồn truy vấn nhật ký log, giới hạn tối đa 1000 dòng/truy vấn).
+# ==============================================================================
+
 apiVersion: 1
 
 datasources:

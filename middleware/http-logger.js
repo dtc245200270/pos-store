@@ -1,5 +1,21 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - TRUNG GIAN GHI NHẬT KÝ HTTP REQUEST (HTTP ACCESS LOGGER)
+ * ==============================================================================
+ * Tệp: middleware/http-logger.js
+ * Mục đích:
+ *   - Lắng nghe sự kiện hoàn tất (finish) của mỗi HTTP request và đo lường thời gian xử lý (durationMs).
+ *   - Tự động gắn nhãn cấp độ log: 5xx -> error, 4xx -> warn, 2xx/3xx -> info.
+ *   - Trích xuất dữ liệu sạch: path (đã loại bỏ query string), client IP, Request ID và User ID.
+ *   - Bỏ qua endpoint nội bộ /healthz để tránh làm đầy dung lượng lưu trữ nhật ký.
+ * ==============================================================================
+ */
+
 const logger = require('../config/logger');
 
+/**
+ * Middleware đo lường và ghi log cho các yêu cầu HTTP
+ */
 function httpLoggerMiddleware(req, res, next) {
   const rawUrl = req.originalUrl || req.url || req.path || '/';
   const pathOnly = rawUrl.split('?')[0];
@@ -9,6 +25,7 @@ function httpLoggerMiddleware(req, res, next) {
     return next();
   }
 
+  // Ghi lại mốc thời gian bắt đầu với độ chính xác nanosecond
   const startTime = process.hrtime.bigint();
 
   res.on('finish', () => {

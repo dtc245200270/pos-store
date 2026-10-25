@@ -1,3 +1,21 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - GIAO DIỆN QUẢN LÝ SẢN PHẨM (PRODUCTS FRONTEND)
+ * ==============================================================================
+ * Tệp: public/js/products.js
+ * Mục đích:
+ *   - Điều khiển tương tác trên màn hình Quản lý danh mục sản phẩm (views/products.html).
+ *   - Các tính năng:
+ *       1. Danh sách sản phẩm phân trang (10 dòng/trang), tìm kiếm theo SKU / tên sản phẩm.
+ *       2. Lọc theo trạng thái kinh doanh: Tất cả, Đang bán (active), Ngừng bán (inactive).
+ *       3. Thêm mới sản phẩm: Kiểm tra bắt buộc SKU duy nhất, giá bán dương; tồn kho mặc định là 0.
+ *       4. Sửa sản phẩm: Không cho phép can thiệp số lượng tồn kho (bất biến qua form sửa).
+ *       5. Chuyển đổi trạng thái "Ngừng kinh doanh" / "Kích hoạt lại" mặt hàng.
+ *       6. Xóa vĩnh viễn: Phân tích thông báo lỗi từ server, nếu sản phẩm đã phát sinh giao dịch
+ *          hoặc còn tồn kho thì gợi ý chuyển sang "Ngừng kinh doanh" thay vì xóa cứng.
+ * ==============================================================================
+ */
+
 let currentProducts = [];
 let currentPage = 1;
 const pageSize = 10;

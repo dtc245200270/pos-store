@@ -1,3 +1,26 @@
+/**
+ * POS Store - Bộ Kiểm Thử Tích Hợp Hệ Thống (Integration Test Suite)
+ * Đường dẫn: tests/integration.test.js
+ *
+ * Điều kiện chuẩn bị:
+ * - Khởi tạo cơ sở dữ liệu kiểm thử cô lập 'pos_store_test' (không ảnh hưởng dữ liệu sản xuất).
+ * - Nạp tự động toàn bộ schema và các migration (sessions, payment_methods).
+ * - Tạo tài khoản kiểm thử: 'manager' (Quản lý) và 'cashier1' (Thu ngân).
+ * - Khởi chạy tiến trình máy chủ Express độc lập tại cổng 3099.
+ *
+ * Thao tác kiểm tra:
+ * - Luồng 1: Xác thực tài khoản, kiểm tra chống brute-force và cơ chế cấp phát CSRF token.
+ * - Luồng 2: Quản lý danh mục sản phẩm (thêm, cập nhật giá bán, kiểm tra tính duy nhất SKU).
+ * - Luồng 3: Quy trình nhập kho (stock receipts) và cập nhật số lượng tồn kho tự động.
+ * - Luồng 4: Quy trình bán hàng (invoices) tại quầy, xuất kho và trừ tồn kho chính xác.
+ *
+ * Kết quả mong đợi:
+ * - Trả về đúng HTTP status code (200/201), dữ liệu JSON khớp định dạng, giao dịch commit nhất quán.
+ *
+ * Bước dọn dẹp:
+ * - Tắt tiến trình máy chủ kiểm thử (kill serverProcess), giải phóng kết nối MySQL pool và xóa database test.
+ */
+
 require('dotenv').config();
 const test = require('node:test');
 const assert = require('node:assert');

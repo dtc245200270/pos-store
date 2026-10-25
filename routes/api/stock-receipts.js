@@ -1,3 +1,24 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - QUẢN LÝ PHIẾU NHẬP HÀNG (STOCK RECEIPTS API)
+ * ==============================================================================
+ * Tệp: routes/api/stock-receipts.js
+ * Mục đích:
+ *   - Lập và theo dõi các chứng từ nhập kho hàng hóa từ nhà cung cấp.
+ *   - Toàn bộ endpoints được bảo vệ: Chỉ vai trò MANAGER mới có quyền thao tác.
+ *   - Các cơ chế kiểm soát dữ liệu và tài chính:
+ *       1. Giao dịch toàn vẹn (Database Transaction): Tạo phiếu nhập, lưu snapshot chi tiết sản phẩm,
+ *          cộng tồn kho sản phẩm và ghi sổ biến động kho (stock_movements) trong 1 transaction duy nhất.
+ *       2. Chống gửi trùng / Lặp giao dịch (Idempotency): Sử dụng cặp `request_key` (từ client)
+ *          và mã băm SHA-256 `request_hash` (dữ liệu phiếu). Nếu trùng lặp yêu cầu, trả về kết quả cũ (HTTP 200)
+ *          hoặc báo lỗi Conflict (HTTP 409) nếu nội dung bị thay đổi.
+ *       3. Chống Race Condition & Deadlock: Khóa các dòng sản phẩm bằng `SELECT ... FOR UPDATE`
+ *          với danh sách product_id được sắp xếp tăng dần trước khi khóa.
+ *       4. Độ chính xác số học: Sử dụng Decimal.js để tính tổng tiền, ngăn chặn sai số dấu phẩy động của IEEE 754.
+ *       5. Bất biến chứng từ: Nghiêm cấm sửa (PUT) hoặc xóa (DELETE) phiếu nhập đã ghi nhận (HTTP 405).
+ * ==============================================================================
+ */
+
 const express = require('express');
 const crypto = require('crypto');
 const pool = require('../../config/db');

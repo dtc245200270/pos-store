@@ -1,7 +1,13 @@
--- Migration: Bổ sung phương thức thanh toán và thông tin chuyển khoản vào bảng invoices
--- Mục đích: Hỗ trợ thanh toán Chuyển khoản QR (VietQR) bên cạnh Tiền mặt (CASH).
--- Lưu nội dung chuyển khoản và thời điểm nhân viên xác nhận đã nhận đủ tiền.
--- Hóa đơn cũ trước migration có payment_method IS NULL, được hiển thị là "Chưa ghi nhận".
+-- ==============================================================================
+-- DỰ ÁN POS STORE - BẢN DI TRÚ CSDL 02: PHƯƠNG THỨC THANH TOÁN & VIETQR
+-- ==============================================================================
+-- Tệp: database/migration_02_payment_methods.sql
+-- Mục đích:
+--   - Bổ sung 3 cột vào bảng `invoices` để hỗ trợ thanh toán Chuyển khoản VietQR bên cạnh Tiền mặt:
+--       1. payment_method (VARCHAR(20)): 'CASH' hoặc 'BANK_TRANSFER' (mặc định NULL cho hóa đơn cũ).
+--       2. transfer_content (VARCHAR(100)): Nội dung chuyển khoản duy nhất phục vụ đối soát.
+--       3. transfer_confirmed_at (DATETIME): Thời điểm thu ngân xác nhận đã nhận đủ tiền vào tài khoản.
+-- ==============================================================================
 
 ALTER TABLE invoices
   ADD COLUMN payment_method VARCHAR(20) NULL DEFAULT NULL AFTER total_amount,

@@ -1,3 +1,16 @@
+// ==============================================================================
+// POS Store - Cấu Hình Grafana Alloy Thu Thập Log Windows (Host Pipeline)
+// Tệp: deploy/logging/config.alloy
+//
+// Mục đích:
+// - Giám sát và đọc các tệp log chạy trực tiếp trên máy trạm Windows:
+//   1. Log ứng dụng Node.js: logs/app.log (JSON UTF-8).
+//   2. Log truy cập Nginx Windows: C:/nginx/logs/access.log.
+//   3. Log lỗi Nginx Windows: C:/nginx/logs/error.log.
+// - Tự động gắn nhãn phân loại: app="pos_store", source, env="development".
+// - Chuyển tiếp luồng log về Grafana Loki cục bộ (http://127.0.0.1:3100).
+// ==============================================================================
+
 logging {
   level       = "info"
   format      = "logfmt"

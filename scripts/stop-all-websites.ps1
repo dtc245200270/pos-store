@@ -1,8 +1,21 @@
-# Script dung toan bo cac website va dich vu web dang chay trong POS Store
+﻿<#
+.SYNOPSIS
+    Kịch bản dừng toàn bộ các website và dịch vụ web đang chạy trong POS Store trên Windows.
+.DESCRIPTION
+    Đường dẫn: scripts/stop-all-websites.ps1
+    Mục đích:
+    - Gọi tuần tự các kịch bản dừng an toàn đã xác minh:
+      1. phpMyAdmin (cổng 8081).
+      2. Prometheus (cổng 9090) và Grafana (cổng 3030).
+      3. Nginx Reverse Proxy (cổng 8080).
+      4. Node.js Express Backend (cổng 3000 và 9101).
+    - Giải phóng toàn bộ cổng mạng sạch sẽ, không ảnh hưởng tới tiến trình hệ thống khác.
+#>
+
 $ErrorActionPreference = 'SilentlyContinue'
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "         DUNG MOI WEBSITE VA DICH VU WEB POS STORE        " -ForegroundColor Yellow
+Write-Host "         DỪNG MỌI WEBSITE VÀ DỊCH VỤ WEB POS STORE        " -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Dung phpMyAdmin (Cong 8081)

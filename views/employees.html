@@ -1,3 +1,15 @@
+<!--
+  POS Store - Giao diện Quản Lý Tài Khoản Nhân Viên (Employees Management)
+  Đường dẫn: views/employees.html
+
+  Mục đích:
+  - Cung cấp giao diện quản lý danh sách tài khoản nhân viên cho Quản lý (MANAGER).
+  - Tìm kiếm và lọc theo tên đăng nhập, họ tên, vai trò (MANAGER / CASHIER), trạng thái (Hoạt động / Bị khóa).
+  - Modal thêm mới nhân viên thu ngân hoặc sửa thông tin (họ tên, vai trò, trạng thái khóa, đặt lại mật khẩu).
+  - Áp dụng các điều kiện bảo vệ: vô hiệu hóa nút sửa/khóa/xóa đối với tài khoản Quản trị hệ thống
+    (mặc định là username 'manager', có thể cấu hình qua biến môi trường SYSTEM_ADMIN_USERNAME; tránh nhầm với username 'admin')
+    hoặc tài khoản quản lý cuối cùng của cửa hàng.
+-->
 <!DOCTYPE html>
 <html lang="vi">
 <head>

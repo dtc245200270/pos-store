@@ -1,3 +1,16 @@
+# ==============================================================================
+# POS Store - Cấu Hình Máy Chủ Lưu Trữ Nhật Ký Grafana Loki (Docker)
+# Tệp: deploy/docker/loki/loki.yml
+#
+# Mục đích:
+# - Quản lý việc tiếp nhận, đánh chỉ mục và lưu trữ tập trung toàn bộ nhật ký hệ thống.
+# - Cổng HTTP 3100: Nhận luồng push log từ Grafana Alloy và phục vụ truy vấn LogQL từ Grafana.
+# - Cổng gRPC 9096: Giao tiếp nội bộ hiệu năng cao của Loki.
+# - Định dạng lưu trữ: Hệ thống tệp (filesystem) với định dạng TSDB schema v13 tối ưu hiệu suất.
+# - Thời gian lưu giữ mẫu log: Tối đa 168 giờ (7 ngày).
+# ==============================================================================
+
+# Vô hiệu hóa chế độ xác thực đa người thuê (Multi-tenancy) cho môi trường đơn cửa hàng
 auth_enabled: false
 
 server:

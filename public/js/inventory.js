@@ -1,4 +1,19 @@
-// Quản lý và tra cứu tồn kho - POS Store
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - GIAO DIỆN TRA CỨU TỒN KHO & BIẾN ĐỘNG KHO (INVENTORY FRONTEND)
+ * ==============================================================================
+ * Tệp: public/js/inventory.js
+ * Mục đích:
+ *   - Điều khiển tương tác trang Quản lý tồn kho (views/inventory.html).
+ *   - Phân quyền theo vai trò:
+ *       + Thu ngân (CASHIER): Tra cứu số lượng tồn thực tế của các mặt hàng phục vụ bán lẻ.
+ *       + Quản lý (MANAGER): Tra cứu tồn kho kết hợp tab xem Sổ biến động kho tổng thể
+ *         và xem lịch sử biến động chi tiết từng sản phẩm kèm số chứng từ / người thực hiện.
+ *   - Hỗ trợ tìm kiếm nhanh theo mã SKU / tên sản phẩm (có kỹ thuật Debounce).
+ *   - Bộ lọc trạng thái: Hết hàng (0), Sắp hết (<= threshold), Còn hàng an toàn (> threshold).
+ * ==============================================================================
+ */
+
 let currentUserRole = '';
 let currentInventory = [];
 let currentThreshold = 5;

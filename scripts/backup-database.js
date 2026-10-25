@@ -1,3 +1,13 @@
+/**
+ * POS Store - Kịch Bản Sao Lưu Dữ Liệu Dạng JSON (Database JSON Backup Script)
+ * Đường dẫn: scripts/backup-database.js
+ *
+ * Mục đích:
+ * - Truy vấn toàn bộ 7 bảng dữ liệu quan hệ của hệ thống POS Store.
+ * - Xuất dữ liệu sang tệp JSON có gắn dấu thời gian (timestamp) lưu trong database/backups/.
+ * - Hỗ trợ sao lưu nhẹ, phục vụ kiểm tra hoặc đối soát nhanh cấu trúc dữ liệu.
+ */
+
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');

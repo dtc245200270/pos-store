@@ -1,21 +1,41 @@
-// Quản lý giỏ hàng phiếu nhập kho
+/**
+ * POS Store - Frontend Script Quản Lý Nhập Kho (Stock Receipts Management)
+ * Đường dẫn: public/js/stock-receipts.js
+ *
+ * Mục đích:
+ * - Quản lý việc lập phiếu nhập kho hàng hóa cho cửa hàng (chỉ dành cho Quản lý / MANAGER).
+ * - Cho phép thêm, sửa dòng, xóa dòng sản phẩm vào phiếu nhập; tự động cộng dồn số lượng nếu cùng đơn giá.
+ * - Kiểm tra tính toàn vẹn dữ liệu: số lượng nguyên dương, đơn giá không âm tối đa 2 chữ số thập phân.
+ * - Hỗ trợ cơ chế Idempotent: Request Key và cờ isPendingRetry giúp quản lý thử lại an toàn khi gặp sự cố mạng
+ *   hoặc lỗi 5xx mà không lo bị ghi nhận trùng chứng từ hoặc cộng thừa tồn kho.
+ * - Lọc và phân trang lịch sử nhập kho theo từ khóa, khoảng ngày dương lịch hợp lệ.
+ * - Xem chi tiết chứng từ phiếu nhập (thông tin người lập, ngày giờ theo giờ Việt Nam, chi tiết từng mặt hàng).
+ */
+
+// ============================================================================
+// KHỞI TẠO BIẾN TRẠNG THÁI TOÀN CỤC PHIẾU NHẬP KHO
+// ============================================================================
+// Giỏ hàng chứa danh sách các mặt hàng chuẩn bị nhập kho [{ product_id, sku, name, unit, quantity, unit_cost }]
 window.stockReceiptCart = window.stockReceiptCart || [];
 let cart = window.stockReceiptCart;
+// Danh sách sản phẩm đang kinh doanh nạp từ máy chủ
 let activeProducts = [];
+// Chỉ số dòng đang được chỉnh sửa trong giỏ nhập (-1 nếu không sửa dòng nào)
 let editingItemIndex = -1;
 
+// Hàm sinh khóa ngẫu nhiên chống trùng lặp yêu cầu (Idempotent Request Key)
 function generateKey() {
   return Date.now().toString() + '-' + Math.random().toString(36).substring(2);
 }
 let currentRequestKey = generateKey();
-let isSubmitting = false;
-let isPendingRetry = false;
+let isSubmitting = false; // Cờ đang gửi yêu cầu lưu phiếu nhập (chặn gửi trùng)
+let isPendingRetry = false; // Cờ chờ thử lại khi chưa xác minh được kết quả commit từ server
 
-// Biến phân trang và lọc lịch sử phiếu nhập
+// Biến phân trang và lọc lịch sử phiếu nhập kho
 let historyPage = 1;
 const historyPageSize = 5;
 let historyTotalPages = 1;
-let historyTotalItems = 0;
+let historyTotal = 0;
 
 // Hiển thị thông báo trên giao diện
 function showReceiptMessage(message, type = 'info') {

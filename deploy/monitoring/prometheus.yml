@@ -1,6 +1,12 @@
-# Cấu hình Prometheus cho POS Store
-# Lắng nghe tại: 127.0.0.1:9090
-# Scrape endpoint metrics Node.js tại: 127.0.0.1:9101/metrics mỗi 15 giây
+# ==============================================================================
+# POS Store - Cấu Hình Máy Chủ Thu Thập Số Liệu Prometheus (Windows Host)
+# Tệp: deploy/monitoring/prometheus.yml
+#
+# Mục đích:
+# - Lắng nghe tại địa chỉ cục bộ 127.0.0.1:9090 trên Windows.
+# - Thu thập số liệu định kỳ từ endpoint metrics Node.js tại 127.0.0.1:9101/metrics mỗi 15 giây.
+# - Thiết lập nhãn giám sát chuẩn: app="pos_store", env="development".
+# ==============================================================================
 
 global:
   scrape_interval: 15s

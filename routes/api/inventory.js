@@ -1,3 +1,18 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - QUẢN LÝ VÀ THEO DÕI TỒN KHO (INVENTORY & STOCK MOVEMENTS API)
+ * ==============================================================================
+ * Tệp: routes/api/inventory.js
+ * Mục đích:
+ *   - Tra cứu số lượng tồn kho thực tế, phân loại trạng thái: Hết hàng (0), Sắp hết (<= threshold), Còn hàng an toàn.
+ *   - Tuyệt đối bảo vệ tính bất biến của tồn kho: Chặn toàn bộ phương thức POST/PUT/PATCH/DELETE
+ *     bằng HTTP 405 Method Not Allowed (tồn kho chỉ biến động gián tiếp qua Hóa đơn hoặc Phiếu nhập).
+ *   - Truy xuất lịch sử sổ kho chi tiết (stock_movements): Ghi lại số dư trước/sau, delta biến động, loại giao dịch (IMPORT/EXPORT),
+ *     số chứng từ tham chiếu và người thực hiện. (Chức năng này chỉ dành riêng cho MANAGER).
+ *   - Xử lý bộ lọc khoảng ngày chặt chẽ theo lịch dương thực tế (chấp nhận năm nhuận, chặn ngày 30/2, 31/4).
+ * ==============================================================================
+ */
+
 const express = require('express');
 const pool = require('../../config/db');
 const { requireLogin } = require('../../middleware/auth');

@@ -1,4 +1,17 @@
-// Trang Tổng quan dành cho Quản lý (MANAGER) - POS Store
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - GIAO DIỆN BẢNG ĐIỀU KHIỂN QUẢN LÝ (DASHBOARD FRONTEND)
+ * ==============================================================================
+ * Tệp: public/js/dashboard.js
+ * Mục đích:
+ *   - Xử lý hiển thị dữ liệu trang Tổng quan (Dashboard) cho Quản lý (MANAGER).
+ *   - Định dạng hiển thị số tiền VND (`formatMoney`) và thời gian chuẩn Việt Nam (`formatDateTimeVN`).
+ *   - Tải dữ liệu từ API `/api/dashboard/stats`:
+ *       + 4 thẻ chỉ số: Doanh thu hôm nay, Số hóa đơn hôm nay, Sản phẩm đang bán, Cảnh báo sắp hết hàng.
+ *       + Bảng theo dõi 20 mặt hàng sắp hết hàng theo ngưỡng linh hoạt.
+ *       + Bảng 10 hóa đơn bán hàng gần nhất.
+ * ==============================================================================
+ */
 
 function formatMoney(amount) {
   return Number(amount || 0).toLocaleString('vi-VN') + ' đ';

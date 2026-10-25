@@ -1,3 +1,18 @@
+﻿<#
+.SYNOPSIS
+    Kịch bản kiểm tra các biểu thức truy vấn PromQL trên Prometheus cho POS Store.
+.DESCRIPTION
+    Đường dẫn: scripts/check_prom_queries.ps1
+    Mục đích:
+    - Gửi yêu cầu truy vấn HTTP tới API Prometheus (/api/v1/query).
+    - Kiểm tra 4 biểu thức đo lường chính:
+      1. Panel 1 (UP): up{job="pos_store"} - Trạng thái tiến trình ứng dụng còn sống (1) hay chết (0).
+      2. Panel 2 (RPS): sum(rate(http_requests_total[1m])) - Tần suất yêu cầu trên giây.
+      3. Panel 3 (5xx %): Tỷ lệ phần trăm lỗi máy chủ HTTP 5xx trên tổng số yêu cầu.
+      4. Panel 4 (<=2s %): Tỷ lệ phần trăm yêu cầu phản hồi nhanh trong 2 giây.
+    - Phân biệt rõ: Metric không có dữ liệu (Vector rỗng `result: []`) khác với metric có giá trị bằng số 0.
+#>
+
 $queries = @(
     @{ Name = "Panel 1 (UP)"; Expr = 'up{job="pos_store"}' },
     @{ Name = "Panel 2 (RPS)"; Expr = 'sum(rate(http_requests_total{job="pos_store"}[1m]))' },

@@ -1,6 +1,23 @@
-const crypto = require('crypto');
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - HỆ THỐNG GHI NHẬT KÝ CÓ CẤU TRÚC (STRUCTURED JSON LOGGER)
+ * ==============================================================================
+ * Tệp: config/logger.js
+ * Mục đích:
+ *   - Cung cấp tiện ích ghi log JSON có cấu trúc thống nhất cho toàn bộ hệ thống.
+ *   - Lọc đệ quy theo tên khóa trong SENSITIVE_KEYS (như mật khẩu, token, cookie, session secret)
+ *     trước khi ghi ra tệp hoặc console; không bảo đảm che bí mật nằm trong chuỗi văn bản bất kỳ.
+ *   - Xuất dữ liệu đồng thời:
+ *       1. Tệp UTF-8 cục bộ 'logs/app.log' để Grafana Alloy thu thập và đẩy vào Loki.
+ *       2. Luồng chuẩn stdout/stderr phục vụ Docker log driver và theo dõi console.
+ * ==============================================================================
+ */
 
-// Danh sách các trường nhạy cảm cần loại bỏ hoặc che giấu
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+// Danh sách các khóa (keys) nhạy cảm cần loại bỏ hoàn toàn khỏi dữ liệu nhật ký
 const SENSITIVE_KEYS = new Set([
   'password',
   'password_hash',
@@ -28,6 +45,12 @@ const SENSITIVE_KEYS = new Set([
   'root_password'
 ]);
 
+/**
+ * Hàm làm sạch dữ liệu nhật ký (Sanitize Data)
+ * - Chức năng: Đệ quy duyệt qua mảng hoặc đối tượng để lọc bỏ các trường nhạy cảm trong `SENSITIVE_KEYS`.
+ * - Đầu vào: `data` (Bất kỳ đối tượng, mảng hoặc giá trị nguyên thủy nào).
+ * - Kết quả: Đối tượng sạch không còn chứa trường nhạy cảm; không làm biến đổi đối tượng gốc.
+ */
 function sanitizeData(data) {
   if (data === null || data === undefined) return data;
   if (typeof data !== 'object') return data;
@@ -50,9 +73,7 @@ function sanitizeData(data) {
   return clean;
 }
 
-const fs = require('fs');
-const path = require('path');
-
+// Xác định và khởi tạo thư mục lưu tệp nhật ký
 const LOGS_DIR = path.resolve(__dirname, '..', 'logs');
 if (!fs.existsSync(LOGS_DIR)) {
   try {
@@ -61,14 +82,24 @@ if (!fs.existsSync(LOGS_DIR)) {
 }
 const LOG_FILE_PATH = path.join(LOGS_DIR, 'app.log');
 
+/**
+ * Ghi một dòng nhật ký vào tệp app.log một cách an toàn
+ * - Đầu vào: `line` (Chuỗi JSON kèm ký tự xuống dòng \n).
+ * - Tác động: Ghi nối tiếp vào tệp, bắt mọi ngoại lệ I/O để không làm gián đoạn luồng ứng dụng.
+ */
 function appendToFile(line) {
   try {
     fs.appendFileSync(LOG_FILE_PATH, line, { encoding: 'utf8' });
   } catch (fileErr) {
-    // Tranh gay loi gián doan luong ung dung
+    // Tránh gây lỗi làm gián đoạn luồng nghiệp vụ ứng dụng
   }
 }
 
+/**
+ * Hàm cốt lõi ghi nhận sự kiện nhật ký theo định dạng chuẩn JSON Line
+ * - Bổ sung trường timestamp (ISO-8601 UTC) và cấp độ log (level).
+ * - Thực hiện ghi kép: Tệp app.log (cho Alloy/Loki) và stdout/stderr.
+ */
 function writeLog(level, data) {
   try {
     const payload = {
@@ -78,16 +109,17 @@ function writeLog(level, data) {
     };
     const jsonLine = JSON.stringify(payload) + '\n';
 
-    // 1. Ghi ben vung vao file UTF-8 de Grafana Alloy thu thap
+    // 1. Ghi bền vững vào file UTF-8 để Grafana Alloy thu thập
     appendToFile(jsonLine);
 
-    // 2. Tiep tuc ghi vao stdout/stderr
+    // 2. Đồng thời xuất ra stdout hoặc stderr theo cấp độ
     if (level === 'error') {
       process.stderr.write(jsonLine);
     } else {
       process.stdout.write(jsonLine);
     }
   } catch (err) {
+    // Dự phòng trường hợp lỗi phân tích cú pháp JSON
     const fallback = JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'error',
@@ -100,24 +132,31 @@ function writeLog(level, data) {
 }
 
 const logger = {
+  /** Ghi nhận thông tin thông thường (INFO) */
   info(data) {
     writeLog('info', data);
   },
+  /** Ghi nhận cảnh báo hệ thống (WARN) */
   warn(data) {
     writeLog('warn', data);
   },
+  /** Ghi nhận sự cố hoặc lỗi nghiêm trọng (ERROR) */
   error(data) {
     writeLog('error', data);
   },
+  /** Ghi nhận sự kiện hoàn tất một yêu cầu HTTP (gọi từ httpLoggerMiddleware) */
   logHttpRequest(data) {
     writeLog(data.level || 'info', {
       event: 'http_request',
       ...data
     });
   },
+  /**
+   * Ghi log lỗi máy chủ có liên kết với Request ID và ngữ cảnh người dùng
+   * - Có cơ chế cờ `_serverErrorLogged` để chống ghi đúp log cho cùng một request.
+   */
   logServerError(req, operation, error) {
     if (!req) return;
-    // Chống ghi log lặp lại cho cùng một request
     if (req._serverErrorLogged) return;
     req._serverErrorLogged = true;
 
@@ -142,6 +181,9 @@ const logger = {
 
     writeLog('error', logData);
   },
+  /**
+   * Gửi phản hồi HTTP 500 kèm mã requestId cho client và ghi log chi tiết lỗi ở backend
+   */
   sendServerError(res, req, operation, error) {
     logger.logServerError(req, operation, error);
     if (!res.headersSent) {

@@ -13,3 +13,8 @@ deploy/monitoring/bin/
 deploy/monitoring/*.log
 deploy/logging/artifacts/
 deploy/monitoring/artifacts/
+temp_logging_bundle/
+monitoring_bundle_staging/
+**/chrome_csp_test_profile/
+.DS_Store
+Thumbs.db

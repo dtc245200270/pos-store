@@ -1,3 +1,25 @@
+/**
+ * POS Store - Bộ Kiểm Thử Nghiệp Vụ Nhập Kho (Stock Receipts Tests)
+ * Đường dẫn: tests/stock-receipts.test.js
+ *
+ * Điều kiện chuẩn bị:
+ * - Khởi tạo cơ sở dữ liệu kiểm thử cô lập 'pos_store_receipts_test' và nạp cấu trúc bảng.
+ * - Khởi động máy chủ ứng dụng độc lập trên cổng 3003.
+ *
+ * Thao tác kiểm tra:
+ * - Kiểm tra phân quyền: Chỉ tài khoản Quản lý (MANAGER) mới được phép lập phiếu nhập kho.
+ * - Kiểm tra tính toàn vẹn nghiệp vụ: Số lượng nguyên dương, đơn giá không âm, tính toán chính xác tổng tiền phiếu.
+ * - Kiểm tra cập nhật tồn kho: Số lượng tồn kho tăng tương ứng và tự động ghi sổ cái stock_movements (loại IN).
+ * - Kiểm tra cơ chế chống lặp (Idempotent): Gửi lại cùng request_key trả về thông tin phiếu cũ mà không tăng trùng tồn kho.
+ * - Kiểm tra tính bất biến của chứng từ: Chặn sửa hoặc xóa phiếu đã lập (PUT/DELETE trả về 405 Method Not Allowed).
+ *
+ * Kết quả mong đợi:
+ * - Tạo phiếu thành công (201 Created), tồn kho tăng chính xác, bảo đảm tính bất biến của dữ liệu kế toán kho.
+ *
+ * Bước dọn dẹp:
+ * - Dừng tiến trình máy chủ cổng 3003 và xóa cơ sở dữ liệu kiểm thử pos_store_receipts_test.
+ */
+
 require('dotenv').config();
 const test = require('node:test');
 const assert = require('node:assert');

@@ -1,8 +1,20 @@
+﻿<#
+.SYNOPSIS
+    Kịch bản dừng an toàn hệ thống logging Loki và Grafana Alloy trên Windows.
+.DESCRIPTION
+    Đường dẫn: deploy/logging/stop-logging.ps1
+    Mục đích:
+    - Tìm kiếm và xác minh tiến trình Grafana Alloy (cổng 12345) và Loki (cổng 3100).
+    - Sử dụng hàm Test-IsTargetLoggingProcess trong ProcessIdentity.ps1 để kiểm tra kép đường dẫn tệp thực thi và tham số cấu hình.
+    - Dừng tiến trình mục tiêu bằng Stop-Process -Force sau khi đã xác minh đúng danh tính POS Store.
+    - Chờ và kiểm tra thực tế: xác nhận tiến trình theo PID đã kết thúc hoàn toàn và cổng mạng đã được giải phóng (Listen connection = null).
+#>
+
 $ErrorActionPreference = 'Stop'
 
 try {
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "     DUNG AN TOAN HE THONG LOGGING LOKI & GRAFANA ALLOY   " -ForegroundColor Yellow
+Write-Host "     DỪNG AN TOÀN HỆ THỐNG LOGGING LOKI & GRAFANA ALLOY   " -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 $repoRoot = (Resolve-Path "$PSScriptRoot\..\..").Path

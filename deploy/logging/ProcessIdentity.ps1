@@ -1,16 +1,16 @@
-# ==============================================================================
-# ProcessIdentity.ps1 - Ham nhan dien tien trinh dung chung cho Loki va Alloy
+﻿# ==============================================================================
+# ProcessIdentity.ps1 - Hàm nhận diện tiến trình dùng chung cho Loki và Alloy
 # ==============================================================================
 
 function Test-IsTargetLoggingProcess {
     <#
     .SYNOPSIS
-        Xac minh danh tinh tien trinh logging POS Store (Loki / Alloy).
+        Xác minh danh tính tiến trình logging POS Store (Loki / Alloy).
     .DESCRIPTION
-        Yeu cau dong thoi ca hai dieu kien (AND, tuyet doi khong dung OR):
-        1. ExecutablePath chuan hoa phai khop chinh xac duong dan executable mong muon.
-        2. CommandLine phai chua duong dan file cau hinh chuan hoa khop chinh xac file config POS Store.
-        Khong chap nhan so sanh bang ten file chung chung hay chi trung so cong.
+        Yêu cầu thỏa mãn đồng thời cả hai điều kiện (AND, tuyệt đối không dùng OR):
+        1. ExecutablePath chuẩn hóa phải khớp chính xác đường dẫn tệp thực thi mong muốn.
+        2. CommandLine phải chứa đường dẫn tệp cấu hình chuẩn hóa khớp chính xác tệp cấu hình của POS Store.
+        Không chấp nhận so sánh bằng tên tệp chung chung hay chỉ dựa vào số cổng mạng.
     #>
     [CmdletBinding()]
     param(

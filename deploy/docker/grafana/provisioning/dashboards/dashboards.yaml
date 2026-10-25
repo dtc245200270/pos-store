@@ -1,3 +1,13 @@
+# ==============================================================================
+# POS Store - Cấu Hình Nạp Bảng Điều Khiển Cho Grafana (Docker Provisioning)
+# Tệp: deploy/docker/grafana/provisioning/dashboards/dashboards.yaml
+#
+# Mục đích:
+# - Tự động nạp bảng điều khiển giám sát POS Store từ thư mục /var/lib/grafana/dashboards.
+# - Thiết lập thư mục hiển thị trên Grafana là 'POS Store'.
+# - Tự động quét và cập nhật lại thay đổi từ tệp JSON mỗi 5 giây.
+# ==============================================================================
+
 apiVersion: 1
 
 providers:

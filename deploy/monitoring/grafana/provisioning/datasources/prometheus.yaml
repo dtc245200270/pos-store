@@ -1,3 +1,12 @@
+# ==============================================================================
+# POS Store - Cấu Hình Nguồn Dữ Liệu Prometheus Cho Grafana (Windows Provisioning)
+# Tệp: deploy/monitoring/grafana/provisioning/datasources/prometheus.yaml
+#
+# Mục đích:
+# - Khai báo nguồn dữ liệu Prometheus cục bộ tại địa chỉ http://127.0.0.1:9090.
+# - Thiết lập làm Datasource mặc định, chu kỳ lấy mẫu 15 giây qua phương thức HTTP POST.
+# ==============================================================================
+
 apiVersion: 1
 
 datasources:

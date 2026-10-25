@@ -18,3 +18,11 @@ coverage
 pos-store-error.log
 *.bak
 database/backups
+deploy/monitoring/data
+**/chrome_csp_test_profile
+deploy/monitoring/bin
+docker_bundle_staging
+temp_logging_bundle
+monitoring_bundle_staging
+**/*.zip
+Thumbs.db

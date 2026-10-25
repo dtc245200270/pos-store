@@ -1,22 +1,50 @@
-// Quản lý Bán Hàng tại quầy
+/**
+ * POS Store - Frontend Script Bán Hàng Tại Quầy (Sales / POS Checkout)
+ * Đường dẫn: public/js/sales.js
+ *
+ * Mục đích:
+ * - Quản lý giỏ hàng bán hàng trực tiếp tại quầy thu ngân (POS).
+ * - Tìm kiếm, lọc sản phẩm theo tên hoặc mã SKU nhanh chóng.
+ * - Kiểm tra số lượng tồn kho theo thời gian thực trước khi thêm/sửa giỏ hàng.
+ * - Hỗ trợ 2 phương thức thanh toán linh hoạt: Tiền mặt (CASH) và Chuyển khoản VietQR (BANK_TRANSFER).
+ * - Quản lý trạng thái bất định (Indeterminate Recovery): Tự động bảo toàn giỏ hàng và khóa thao tác
+ *   khi gặp sự cố mạng hoặc lỗi máy chủ 5xx, cho phép thu ngân bấm "Thử lại gửi yêu cầu" mà không mất dữ liệu.
+ * - Hiển thị chi tiết và hỗ trợ in hóa đơn bán hàng theo chuẩn nhiệt hoặc khổ A4/A5.
+ */
+
+// ============================================================================
+// KHỞI TẠO BIẾN TRẠNG THÁI TOÀN CỤC CỦA PHIÊN BÁN HÀNG
+// ============================================================================
+// Request key ngẫu nhiên bảo đảm tính Idempotent khi gửi yêu cầu lên server
 let currentRequestKey = Date.now().toString() + '-' + Math.random().toString(36).substring(2);
+// Số hóa đơn tạm tính theo thời gian thực (HD + timestamp)
 let currentInvoiceNo = 'HD' + Date.now();
+// Mảng lưu danh sách sản phẩm trong giỏ hàng hiện tại [{ product_id, sku, name, unit, quantity, unit_price, stock_quantity }]
 let cart = [];
+// Danh mục toàn bộ sản phẩm đang hoạt động được nạp từ máy chủ
 let allProducts = [];
+// Bảng tra cứu sản phẩm nhanh theo Product ID (Map: id -> product)
 let productsMap = {};
+// Cờ trạng thái đang gửi yêu cầu tạo hóa đơn (ngăn chặn double-click)
 let isSubmitting = false;
+// Cờ kích hoạt chế độ phục hồi bất định khi mất mạng hoặc server lỗi 5xx
 let isPendingRecovery = false;
-let isConfirming = false; // Cờ đang gửi yêu cầu xác nhận thanh toán (chặn gửi lặp và sửa giỏ)
-let pendingConfirmationPayload = null; // Bảo toàn nguyên vẹn payload khi kết quả chưa xác định
+// Cờ đang gửi yêu cầu xác nhận thanh toán (chặn gửi lặp và không cho sửa giỏ hàng)
+let isConfirming = false;
+// Biến lưu trữ nguyên vẹn payload hóa đơn cần thử lại khi kết quả chưa xác định
+let pendingConfirmationPayload = null;
+// Dữ liệu hóa đơn vừa tạo thành công gần nhất để phục vụ xem/in ngay
 let lastCreatedInvoice = null;
+// Đối tượng modal Bootstrap xem chi tiết hóa đơn
 let invoiceModalInstance = null;
+// Dữ liệu hóa đơn chi tiết đang được nạp vào modal
 let currentLoadedInvoice = null;
 
 // Quản lý phương thức thanh toán và chuyển khoản QR
-let selectedPaymentMethod = 'CASH';
-let bankConfig = null;
-let preparedQrData = null;
-let qrModalInstance = null;
+let selectedPaymentMethod = 'CASH'; // 'CASH' hoặc 'BANK_TRANSFER'
+let bankConfig = null; // Cấu hình tài khoản ngân hàng thụ hưởng nhận từ máy chủ
+let preparedQrData = null; // Dữ liệu phiên chuẩn bị QR từ API (/prepare-qr)
+let qrModalInstance = null; // Đối tượng modal hiển thị mã VietQR
 
 // ============================================================================
 // 1. THÔNG BÁO VÀ TIỆN ÍCH HIỂN THỊ

@@ -1,8 +1,20 @@
+﻿<#
+.SYNOPSIS
+    Kịch bản khởi động hệ thống ghi nhận nhật ký tập trung Grafana Loki và Grafana Alloy trên Windows.
+.DESCRIPTION
+    Đường dẫn: deploy/logging/start-logging.ps1
+    Mục đích:
+    - Kiểm tra tính hợp lệ của tệp cấu hình Loki qua lệnh `loki.exe -verify-config`.
+    - Kiểm tra tính hợp lệ của cú pháp pipeline Alloy qua lệnh `alloy.exe validate`.
+    - Khởi chạy tiến trình Loki lắng nghe tại 127.0.0.1:3100 và Alloy tại 127.0.0.1:12345.
+    - Xác nhận trạng thái sẵn sàng của dịch vụ trước khi kết thúc kịch bản.
+#>
+
 $ErrorActionPreference = 'Stop'
 
 try {
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "   KHOI DONG HE THONG LOGGING LOKI & GRAFANA ALLOY        " -ForegroundColor Yellow
+Write-Host "   KHỞI ĐỘNG HỆ THỐNG LOGGING LOKI & GRAFANA ALLOY        " -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 $repoRoot = (Resolve-Path "$PSScriptRoot\..\..").Path

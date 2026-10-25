@@ -1,3 +1,16 @@
+// ==============================================================================
+// POS Store - Cấu Hình Grafana Alloy Thu Thập Log Container (Docker Pipeline)
+// Tệp: deploy/docker/alloy/config.alloy
+//
+// Mục đích:
+// - Giám sát và đọc liên tục các tệp log từ volume dùng chung:
+//   1. Log ứng dụng Node.js (/var/log/app/app.log): định dạng JSON UTF-8.
+//   2. Log truy cập Nginx (/var/log/nginx/pos_access.log): theo dõi lưu lượng HTTP.
+//   3. Log lỗi Nginx (/var/log/nginx/pos_error.log): cảnh báo sự cố kết nối hoặc proxy.
+// - Tự động gắn nhãn phân loại: app="pos_store", source, env="development".
+// - Đẩy toàn bộ luồng log về máy chủ Grafana Loki qua giao thức HTTP (cổng 3100).
+// ==============================================================================
+
 logging {
   level  = "info"
   format = "logfmt"

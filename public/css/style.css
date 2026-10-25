@@ -1,13 +1,16 @@
 /* ==========================================================================
-   POS STORE - DESIGN SYSTEM & ADMIN UI STYLES
-   Bảng màu chủ đạo:
-   - Sidebar: #1E293B
-   - Content Background: #F5F7FB
-   - Card/Surface: #FFFFFF
-   - Primary: #2563EB (Hover: #1D4ED8)
-   - Text Primary: #0F172A, Text Secondary: #64748B
-   - Border: #E2E8F0
-   - Semantic: Error/Hết hàng: #EF4444, Warning: #F59E0B, Success: #10B981
+   POS STORE - HỆ THỐNG GIAO DIỆN & BẢNG MÀU CHUẨN (CSS DESIGN SYSTEM)
+   Tệp: public/css/style.css
+
+   Mục đích:
+   - Định nghĩa toàn bộ hệ thống biến màu sắc CSS (:root), kiểu chữ, bán kính bo tròn và đổ bóng.
+   - Thiết lập cấu trúc bố cục 2 giao diện:
+     + Giao diện Quản lý (Manager Layout): Sidebar bên trái thu phóng linh hoạt, thanh topbar cố định.
+     + Giao diện Thu ngân (Cashier Layout): Thanh menu ngang gọn gàng trên cùng.
+   - Quy chuẩn hóa kiểu dáng thành phần: Thẻ tóm tắt số liệu (KPI Cards), bảng dữ liệu, nút bấm,
+     trạng thái huy hiệu (Badges), cửa sổ bật lên (Modals), biểu mẫu nhập liệu.
+   - Tối ưu hóa hiển thị đáp ứng (Responsive) trên màn hình di động, máy tính bảng và máy trạm POS.
+   - Định dạng kiểu in ấn chuyên dụng (@media print) ẩn menu điều hướng khi in hóa đơn bán hàng.
    ========================================================================== */
 
 :root {

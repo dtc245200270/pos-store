@@ -1,3 +1,20 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - QUẢN LÝ DANH MỤC SẢN PHẨM (PRODUCT CATALOG API)
+ * ==============================================================================
+ * Tệp: routes/api/products.js
+ * Mục đích:
+ *   - Quản lý danh mục hàng hóa kinh doanh: Tra cứu, thêm mới, sửa đổi, ngừng kinh doanh và xóa.
+ *   - Phân quyền: Cả CASHIER và MANAGER đều có quyền tra cứu/tìm kiếm; thao tác thêm/sửa/xóa chỉ dành cho MANAGER.
+ *   - Các quy tắc nghiệp vụ cốt lõi:
+ *       1. Mã SKU là duy nhất (Unique), giá bán phải là số dương tối đa 2 chữ số thập phân.
+ *       2. Tồn kho khởi tạo của sản phẩm mới luôn bằng 0 (tuyệt đối không cho phép nhập số lượng tồn kho tùy tiện qua biểu mẫu sản phẩm).
+ *       3. Bất biến tồn kho: Endpoint PUT /:id chỉ cho phép cập nhật thông tin mô tả và giá bán, không sửa tồn kho.
+ *       4. Ràng buộc toàn vẹn khi xóa: Chỉ được phép xóa vĩnh viễn sản phẩm khi tồn kho bằng 0 VÀ chưa từng phát sinh bất kỳ chứng từ nào
+ *          (không có trong invoice_items, stock_receipt_items, stock_movements). Nếu đã có chứng từ, hệ thống hướng dẫn dùng tính năng "Ngừng kinh doanh".
+ * ==============================================================================
+ */
+
 const express = require('express');
 const pool = require('../../config/db');
 const { requireLogin, requireRole } = require('../../middleware/auth');
@@ -7,7 +24,7 @@ const router = express.Router();
 
 router.use(requireLogin);
 
-// Tìm kiếm sản phẩm (hỗ trợ phân trang, tìm theo SKU/tên, lọc theo trạng thái)
+// 1. Tìm kiếm và liệt kê sản phẩm (hỗ trợ phân trang, tìm theo SKU/tên, lọc theo trạng thái)
 router.get('/', async (req, res) => {
   try {
     const { q, active_only, status, page: pageQuery, limit: limitQuery, paginate } = req.query;

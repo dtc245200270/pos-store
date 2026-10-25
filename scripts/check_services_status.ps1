@@ -1,3 +1,15 @@
+﻿<#
+.SYNOPSIS
+    Kịch bản kiểm tra trạng thái hoạt động của toàn bộ 6 dịch vụ hệ thống POS Store trên Windows.
+.DESCRIPTION
+    Đường dẫn: scripts/check_services_status.ps1
+    Mục đích:
+    - Quét các cổng mạng TCP đang lắng nghe (Listening Ports):
+      + 3306 (MySQL80), 3000 (Backend Express), 9101 (Metrics Server),
+      + 8080 (Nginx Reverse Proxy), 9090 (Prometheus), 3030 (Grafana).
+    - Phân biệt kiểm tra tiến trình đang chạy và chiếm cổng (LISTENING PID) với việc kết nối logic cơ sở dữ liệu.
+#>
+
 $ErrorActionPreference = 'SilentlyContinue'
 
 $services = @(

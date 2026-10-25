@@ -1,3 +1,19 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - ĐO LƯỜNG VÀ GIÁM SÁT PROMETHEUS (PROMETHEUS METRICS)
+ * ==============================================================================
+ * Tệp: config/metrics.js
+ * Mục đích:
+ *   - Định nghĩa Prometheus Registry và các chỉ số đo lường hiệu năng ứng dụng.
+ *   - Chỉ số bao gồm:
+ *       1. Default Node.js metrics: CPU, bộ nhớ Heap/RSS, Event loop lag, Garbage collection.
+ *       2. http_requests_total (Counter): Tổng số yêu cầu HTTP theo method, route, status_code.
+ *       3. http_request_duration_seconds (Histogram): Phân phối độ trễ xử lý theo giây.
+ *   - Chuẩn hóa nhãn route (normalizeRoute) nhằm chống bùng nổ Cardinality (Label Explosion).
+ *   - Khởi chạy máy chủ HTTP độc lập phục vụ Prometheus scrape (mặc định 127.0.0.1:9101/metrics).
+ * ==============================================================================
+ */
+
 const http = require('http');
 const client = require('prom-client');
 

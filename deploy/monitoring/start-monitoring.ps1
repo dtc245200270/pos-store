@@ -1,8 +1,16 @@
-# Script khoi dong he thong giam sat Prometheus & Grafana cho POS Store
-# Cong dich vu:
-# - Prometheus: 127.0.0.1:9090
-# - Grafana: 127.0.0.1:3030
-# - Metrics Node.js: 127.0.0.1:9101/metrics
+﻿<#
+.SYNOPSIS
+    Kịch bản khởi động hệ thống giám sát Prometheus và Grafana cho POS Store trên Windows.
+.DESCRIPTION
+    Đường dẫn: deploy/monitoring/start-monitoring.ps1
+    Mục đích:
+    - Quản lý khởi động cụm giám sát hiệu năng độc lập:
+      + Prometheus: Cổng 127.0.0.1:9090 (kiểm tra trạng thái sẵn sàng qua /-/ready).
+      + Grafana: Cổng 127.0.0.1:3030 (kiểm tra trạng thái sẵn sàng qua /api/health).
+      + Nguồn số liệu Express App: Cổng 127.0.0.1:9101/metrics.
+    - Kiểm tra tính hợp lệ của tệp cấu hình trước khi chạy bằng công cụ `promtool.exe check config`.
+    - Đồng bộ hóa các bản cấu hình provisioning datasources và dashboards tự động.
+#>
 
 $ErrorActionPreference = 'Stop'
 

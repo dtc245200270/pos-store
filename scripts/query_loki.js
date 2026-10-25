@@ -1,3 +1,26 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - TIỆN ÍCH TRUY VẤN NHẬT KÝ TỪ GRAFANA LOKI (LOGQL QUERY CLI)
+ * ==============================================================================
+ * Tệp: scripts/query_loki.js
+ * Mục đích:
+ *   - Truy vấn nhanh nhật ký có cấu trúc từ dịch vụ Grafana Loki qua HTTP API (/loki/api/v1/query_range).
+ *   - Hỗ trợ các bộ lọc cài sẵn:
+ *       + 'node': Nhật ký từ Node.js backend ({app="pos_store", source="node_backend"}).
+ *       + 'nginx': Nhật ký truy cập Nginx reverse proxy ({app="pos_store", source="nginx_access"}).
+ *       + 'nginx_error': Nhật ký lỗi Nginx ({app="pos_store", source="nginx_error"}).
+ *       + 'errors_gte_400': Lọc tất cả nhật ký có mã trạng thái HTTP >= 400.
+ *       + Chuỗi chứa dấu gạch nối: Tự động tìm kiếm theo requestId (UUID).
+ *       + Cú pháp LogQL tùy biến bắt đầu bằng '{'.
+ * ==============================================================================
+ */
+
+/**
+ * Gửi yêu cầu truy vấn khoảng thời gian (query_range) tới máy chủ Loki cục bộ
+ * @param {string} logql - Chuỗi truy vấn cú pháp LogQL
+ * @param {number} limit - Số lượng dòng nhật ký tối đa trả về (mặc định 50)
+ * @returns {Promise<object>} Đối tượng JSON phản hồi từ Loki API
+ */
 async function queryLoki(logql, limit = 50) {
   const query = encodeURIComponent(logql);
   const url = `http://127.0.0.1:3100/loki/api/v1/query_range?query=${query}&limit=${limit}`;
@@ -6,6 +29,9 @@ async function queryLoki(logql, limit = 50) {
   return json;
 }
 
+/**
+ * Hàm thực thi chính khi chạy từ giao diện dòng lệnh (CLI)
+ */
 async function main() {
   const arg = process.argv[2] || 'all';
   let logql = '{app="pos_store"}';

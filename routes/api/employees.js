@@ -1,3 +1,24 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - QUẢN LÝ NHÂN VIÊN VÀ TÀI KHOẢN (EMPLOYEE MANAGEMENT API)
+ * ==============================================================================
+ * Tệp: routes/api/employees.js
+ * Mục đích:
+ *   - Quản lý tài khoản người dùng: Tạo mới, cập nhật họ tên/vai trò, khóa/mở khóa,
+ *     đặt lại mật khẩu và xóa tài khoản.
+ *   - Toàn bộ endpoints được bảo vệ nghiêm ngặt: Chỉ vai trò MANAGER mới được phép thực thi.
+ *   - Các cơ chế an toàn và quy tắc nghiệp vụ cốt lõi:
+ *       1. Bảo vệ tài khoản quản trị hệ thống (SYSTEM_ADMIN_USERNAME): Chống xóa, khóa,
+ *          đổi vai trò hoặc reset mật khẩu qua giao diện quản lý nhân viên.
+ *       2. Bảo vệ Quản lý cuối cùng (Last Manager Protection): Chống hạ quyền, khóa hoặc xóa
+ *          tài khoản nếu là Quản lý đang hoạt động cuối cùng của hệ thống.
+ *       3. Chống thao tác tự hại (Self-Protection): Quản lý không thể tự khóa, tự hạ quyền hoặc tự xóa chính mình.
+ *       4. Toàn vẹn chứng từ: Không thể xóa tài khoản đã từng lập hóa đơn (invoices) hoặc phiếu nhập (stock_receipts).
+ *       5. Chống Race Condition & Deadlock: Dùng Transaction kết hợp `SELECT ... FOR UPDATE`
+ *          với thứ tự sắp xếp cố định `ORDER BY id ASC`.
+ * ==============================================================================
+ */
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../../config/db');
@@ -6,9 +27,14 @@ const logger = require('../../config/logger');
 
 const router = express.Router();
 
-// Định danh tài khoản quản trị hệ thống phía server (không dựa vào họ tên hay dữ liệu client)
+// Định danh tài khoản quản trị hệ thống phía server (mặc định 'manager', cấu hình qua .env)
 const SYSTEM_ADMIN_USERNAME = (process.env.SYSTEM_ADMIN_USERNAME || 'manager').trim().toLowerCase();
 
+/**
+ * Kiểm tra xem một tên đăng nhập có phải là tài khoản Quản trị hệ thống gốc hay không
+ * - Đầu vào: `username` (Chuỗi tên đăng nhập).
+ * - Kết quả: `true` nếu khớp với SYSTEM_ADMIN_USERNAME; ngược lại `false`.
+ */
 function isSystemAdmin(username) {
   if (!username) return false;
   return String(username).trim().toLowerCase() === SYSTEM_ADMIN_USERNAME;

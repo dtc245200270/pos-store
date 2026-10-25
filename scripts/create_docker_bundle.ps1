@@ -1,6 +1,18 @@
+﻿<#
+.SYNOPSIS
+    Kịch bản đóng gói toàn bộ mã nguồn cấu hình Docker Compose thành tệp ZIP bàn giao.
+.DESCRIPTION
+    Đường dẫn: scripts/create_docker_bundle.ps1
+    Mục đích:
+    - Thu thập toàn bộ tệp cấu hình phục vụ chạy Docker Compose (compose.yaml, Dockerfile, .dockerignore, .env.example, deploy/docker).
+    - Tạo thư mục tạm (staging), sao chép tệp tin cấu hình và bản sao lưu cơ sở dữ liệu pos_store_backup.sql.
+    - Tạo tệp tóm tắt phiên bản dịch vụ SUMMARY.txt (UTF-8).
+    - Nén thành tệp pos_store_docker_compose_bundle.zip và dọn dẹp thư mục tạm.
+#>
+
 $ErrorActionPreference = 'Stop'
 
-Write-Host "=== DONG GOI MA CAU HINH DOCKER COMPOSE ===" -ForegroundColor Cyan
+Write-Host "=== ĐÓNG GÓI MÃ CẤU HÌNH DOCKER COMPOSE ===" -ForegroundColor Cyan
 
 $stagingDir = "docker_bundle_staging"
 $zipOut = "pos_store_docker_compose_bundle.zip"

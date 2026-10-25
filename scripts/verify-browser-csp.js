@@ -1,3 +1,19 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - KIỂM THỬ CSP VÀ GIAO DIỆN TRÌNH DUYỆT THẬT (CHROME HEADLESS)
+ * ==============================================================================
+ * Tệp: scripts/verify-browser-csp.js
+ * Mục đích:
+ *   - Khởi chạy Google Chrome thực tế ở chế độ Headless và kết nối qua CDP (Chrome DevTools Protocol).
+ *   - Kiểm thử thực tế chính sách Content Security Policy (CSP) từ Nginx reverse proxy (cổng 8080):
+ *       1. Tải tài nguyên giao diện CDN: Bootstrap CSS, Bootstrap Icons, Bootstrap Bundle JS.
+ *       2. Tải ảnh động từ nguồn bên ngoài: Xác minh ảnh mã VietQR từ https://img.vietqr.io.
+ *       3. Bắt các sự kiện vi phạm bảo mật (Log.entryAdded, Network.loadingFailed) để phát hiện CSP blocked.
+ *       4. Kiểm tra điều hướng tuần tự qua tất cả các trang giao diện (/login, /, /sales, /products, v.v.).
+ *       5. Xác minh hoạt động của các widget và hàm đóng/mở modal giao diện.
+ * ==============================================================================
+ */
+
 require('dotenv').config();
 const { spawn } = require('child_process');
 const http = require('http');
@@ -8,10 +24,20 @@ const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
 const DEBUG_PORT = 9223;
 const USER_DATA_DIR = path.join(__dirname, '..', 'deploy', 'monitoring', 'data', 'chrome_csp_test_profile');
 
+/**
+ * Tạm dừng luồng thực thi trong khoảng thời gian xác định
+ * @param {number} ms - Thời gian chờ tính bằng mili-giây
+ * @returns {Promise<void>}
+ */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Thăm dò và lấy URL WebSocket kết nối CDP từ Chrome DevTools
+ * @param {number} port - Cổng remote-debugging-port của tiến trình Chrome
+ * @returns {Promise<string>} Chuỗi WebSocket URL (ws://...) để tương tác trực tiếp với trang
+ */
 async function getWsUrl(port) {
   for (let i = 0; i < 40; i++) {
     await sleep(250);
@@ -25,6 +51,13 @@ async function getWsUrl(port) {
   throw new Error('Timed out waiting for Chrome WebSocket URL');
 }
 
+/**
+ * Gửi lệnh JSON-RPC tới Chrome DevTools Protocol qua WebSocket
+ * @param {WebSocket} ws - Kết nối WebSocket đang hoạt động
+ * @param {string} method - Tên phương thức CDP (ví dụ: 'Page.navigate', 'Runtime.evaluate')
+ * @param {object} params - Các tham số kèm theo phương thức
+ * @returns {Promise<any>} Kết quả trả về từ Chrome
+ */
 function sendCdp(ws, method, params = {}) {
   return new Promise((resolve, reject) => {
     const id = Math.floor(Math.random() * 1000000);
@@ -41,6 +74,12 @@ function sendCdp(ws, method, params = {}) {
   });
 }
 
+/**
+ * Thực thi một biểu thức JavaScript trong ngữ cảnh trang web Chrome
+ * @param {WebSocket} ws - Kết nối WebSocket CDP
+ * @param {string} expression - Chuỗi mã JavaScript cần thực thi trên trình duyệt
+ * @returns {Promise<any>} Giá trị kết quả thực thi
+ */
 async function evaluate(ws, expression) {
   const res = await sendCdp(ws, 'Runtime.evaluate', {
     expression,
@@ -50,12 +89,16 @@ async function evaluate(ws, expression) {
   return res.result ? res.result.value : null;
 }
 
+/**
+ * Hàm điều phối toàn bộ quy trình kiểm thử CSP và giao diện trên trình duyệt Chrome
+ */
 async function runBrowserCspTest() {
   console.log('================================================================');
   console.log('REAL BROWSER CSP & UI VERIFICATION TEST (CHROME HEADLESS)');
   console.log('Testing via Nginx Reverse Proxy at: http://127.0.0.1:8080');
   console.log('================================================================\n');
 
+  // Khối 1: Khởi tạo thư mục dữ liệu người dùng tạm và chạy Chrome headless qua CDP
   if (!fs.existsSync(USER_DATA_DIR)) {
     fs.mkdirSync(USER_DATA_DIR, { recursive: true });
   }
@@ -78,6 +121,7 @@ async function runBrowserCspTest() {
   const networkBlocked = [];
 
   try {
+    // Khối 2: Kết nối WebSocket CDP và kích hoạt các domain nghiệp vụ (Page, Runtime, Log, Network)
     const wsUrl = await getWsUrl(DEBUG_PORT);
     console.log(`[OK] Chrome connected via CDP: ${wsUrl}\n`);
 
@@ -89,13 +133,13 @@ async function runBrowserCspTest() {
       ws.onerror = rej;
     });
 
-    // Enable CDP domains
+    // Kích hoạt các domain của CDP để nhận diện sự kiện mạng và nhật ký trình duyệt
     await sendCdp(ws, 'Page.enable');
     await sendCdp(ws, 'Runtime.enable');
     await sendCdp(ws, 'Log.enable');
     await sendCdp(ws, 'Network.enable');
 
-    // Event listener for Log entries (CSP violations)
+    // Khối 3: Đăng ký bộ lắng nghe sự kiện Log và Network để phát hiện vi phạm CSP và lỗi console
     ws.addEventListener('message', (evt) => {
       const msg = JSON.parse(evt.data);
       if (msg.method === 'Log.entryAdded') {
@@ -121,7 +165,7 @@ async function runBrowserCspTest() {
       }
     });
 
-    // 1. Test Login Page
+    // Khối 4: Bước 1 - Kiểm tra trang đăng nhập (/login), nạp tài nguyên và thực hiện đăng nhập
     console.log('--- STEP 1: Verify Login Page (/login) ---');
     await sendCdp(ws, 'Page.navigate', { url: 'http://127.0.0.1:8080/login' });
     await sleep(1500);
@@ -129,11 +173,11 @@ async function runBrowserCspTest() {
     const loginTitle = await evaluate(ws, 'document.title');
     console.log(`Page Title: "${loginTitle}"`);
 
-    // Check if Bootstrap CSS and JS are loaded
+    // Kiểm tra tài nguyên Bootstrap (CSS & JS) đã nạp thành công, không bị CSP chặn
     const bootstrapLoaded = await evaluate(ws, "typeof bootstrap !== 'undefined' || !!document.querySelector('link[href*=\"bootstrap\"]')");
     console.log(`Bootstrap resources present: ${bootstrapLoaded}`);
 
-    // Fill login form and submit
+    // Điền thông tin đăng nhập Quản lý (manager) và kích hoạt nút submit
     const managerPass = process.env.INITIAL_MANAGER_PASSWORD || 'password123';
     console.log('Filling login credentials and clicking submit button...');
     await evaluate(ws, `
@@ -142,12 +186,12 @@ async function runBrowserCspTest() {
       document.getElementById('login-btn').click();
     `);
 
-    // Wait for redirect to Dashboard
+    // Chờ chuyển hướng sau khi đăng nhập thành công vào trang tổng quan
     await sleep(2500);
     const currentUrl = await evaluate(ws, 'window.location.href');
     console.log(`Redirected URL after login: ${currentUrl}`);
 
-    // 2. Test Dashboard UI, Widgets & Modal
+    // Khối 5: Bước 2 - Kiểm tra trang tổng quan (/), widget cảnh báo tồn kho và tương tác modal
     console.log('\n--- STEP 2: Verify Dashboard Page (/) & Modals ---');
     const dashboardTitle = await evaluate(ws, 'document.title');
     console.log(`Dashboard Title: "${dashboardTitle}"`);
@@ -155,7 +199,7 @@ async function runBrowserCspTest() {
     const statCount = await evaluate(ws, "document.getElementById('stat-low-stock-count') ? document.getElementById('stat-low-stock-count').textContent : 'N/A'");
     console.log(`Dashboard Stat Widget (Low stock count): "${statCount}"`);
 
-    // Test opening and closing modal
+    // Kiểm tra hàm đóng/mở modal chi tiết hóa đơn trên giao diện
     const modalTest = await evaluate(ws, `
       (function() {
         const modalEl = document.getElementById('invoice-detail-modal');
@@ -169,7 +213,7 @@ async function runBrowserCspTest() {
     `);
     console.log('Invoice Detail Modal test:', JSON.stringify(modalTest));
 
-    // 3. Test Sales Page & VietQR Display
+    // Khối 6: Bước 3 - Kiểm tra trang bán hàng (/sales) và tải thử nghiệm mã ảnh VietQR
     console.log('\n--- STEP 3: Verify Sales Page (/sales) & VietQR Display ---');
     await sendCdp(ws, 'Page.navigate', { url: 'http://127.0.0.1:8080/sales' });
     await sleep(2000);
@@ -177,7 +221,7 @@ async function runBrowserCspTest() {
     const salesTitle = await evaluate(ws, 'document.title');
     console.log(`Sales Title: "${salesTitle}"`);
 
-    // Test VietQR Image loading under CSP
+    // Kiểm tra nạp ảnh VietQR từ img.vietqr.io để xác minh chỉ thị img-src của CSP
     const qrImageResult = await evaluate(ws, `
       new Promise((resolve) => {
         const testImg = new Image();
@@ -189,7 +233,7 @@ async function runBrowserCspTest() {
     `);
     console.log('VietQR Image Load Result (from https://img.vietqr.io):', JSON.stringify(qrImageResult));
 
-    // 4. Test Navigation to other management pages
+    // Khối 7: Bước 4 - Điều hướng kiểm tra tất cả các trang quản trị còn lại
     console.log('\n--- STEP 4: Verify Navigation & Management Pages ---');
     const pagesToTest = ['/products', '/employees', '/invoices', '/stock-receipts', '/inventory', '/profile'];
     for (const p of pagesToTest) {
@@ -200,7 +244,7 @@ async function runBrowserCspTest() {
       console.log(`Page ${p}: Title="${title}", Tables count=${tableCount}`);
     }
 
-    // 5. Final Evaluation of CSP Violations & Console Errors
+    // Khối 8: Bước 5 - Tổng kết và in báo cáo kết quả kiểm thử CSP và lỗi console
     console.log('\n================================================================');
     console.log('CSP & BROWSER CONSOLE REPORT');
     console.log('================================================================');

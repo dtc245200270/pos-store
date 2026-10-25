@@ -1,5 +1,20 @@
+# ==============================================================================
+# POS Store - Cấu Hình Khởi Chạy Toàn Bộ Hệ Thống (Docker Compose)
+# Tệp: compose.yaml
+#
+# Kiến trúc hệ thống gồm 8 dịch vụ container kết nối qua mạng nội bộ 'pos_net':
+#   1. mysql: Cơ sở dữ liệu quan hệ MySQL 8.0 lưu trữ người dùng, sản phẩm, hóa đơn, tồn kho.
+#   2. app: Máy chủ ứng dụng Node.js Express (cổng 3000 cho web, 9101 cho metrics Prometheus).
+#   3. nginx: Cổng vào đảo ngược (Reverse Proxy) kiểm soát bảo mật, CSP headers và định tuyến (cổng 8080).
+#   4. phpmyadmin: Giao diện trực quan quản trị cơ sở dữ liệu MySQL (cổng 8081).
+#   5. prometheus: Hệ thống thu thập và lưu trữ chuỗi thời gian số liệu giám sát (cổng 9090).
+#   6. loki: Hệ thống lưu trữ tập trung và truy vấn nhật ký ứng dụng (Log aggregation - cổng 3100).
+#   7. grafana: Bảng điều khiển trực quan hóa biểu đồ hiệu năng và log thời gian thực (cổng 3001).
+#   8. alloy: Tác nhân thu thập nhật ký (Alloy agent) chuyển tiếp log từ volume sang Loki (cổng 12345).
+# ==============================================================================
+
 services:
-  # 1. Co so du lieu MySQL 8.0
+  # 1. Cơ sở dữ liệu quan hệ MySQL 8.0 (MySQL Database Service)
   mysql:
     image: mysql:8.0.40
     container_name: ${MYSQL_CONTAINER_NAME:-pos-store-mysql}
@@ -14,12 +29,15 @@ services:
       MYSQL_USER: ${DB_USER:-pos_app}
       MYSQL_PASSWORD: "${DB_PASSWORD:?Loi: DB_PASSWORD bat buoc phai duoc cau hinh trong .env}"
     ports:
-      # Anh xa sang 3307 tren localhost de tranh xung dot voi MySQL service tren Windows (port 3306)
+      # Ánh xạ ra cổng 3307 trên localhost để tránh xung đột với MySQL cài trực tiếp trên máy host Windows (cổng mặc định 3306)
       - "127.0.0.1:${HOST_MYSQL_PORT:-3307}:3306"
     volumes:
+      # Volume lưu trữ dữ liệu MySQL bền vững
       - mysql_data:/var/lib/mysql
+      # Tự động thực thi các tệp SQL khởi tạo khi tạo container lần đầu
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
+      # Kiểm tra kết nối MySQL bằng lệnh mysqladmin ping
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
       interval: 5s
       timeout: 5s

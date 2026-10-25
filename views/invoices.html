@@ -1,3 +1,15 @@
+<!--
+  POS Store - Giao diện Lịch Sử Hóa Đơn Bán Hàng (Invoices History)
+  Đường dẫn: views/invoices.html
+
+  Mục đích:
+  - Cung cấp giao diện tra cứu lịch sử hóa đơn bán hàng theo phân quyền:
+    + Thu ngân (CASHIER): Được xem danh sách và chi tiết các hóa đơn do chính mình lập.
+    + Quản lý (MANAGER): Được xem toàn bộ hóa đơn của cửa hàng theo quyền API hiện tại.
+  - Tìm kiếm theo mã hóa đơn, lọc theo phương thức thanh toán (Tiền mặt / Chuyển khoản QR), khoảng ngày lập.
+  - Xem chi tiết từng hóa đơn trong modal: danh sách món hàng đã mua, số tiền, thông tin người bán.
+  - Hỗ trợ in ấn hóa đơn và xuất file PDF với định dạng chuẩn sạch (@media print ẩn toàn bộ giao diện quản trị).
+-->
 <!DOCTYPE html>
 <html lang="vi">
 <head>

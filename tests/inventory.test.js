@@ -1,3 +1,24 @@
+/**
+ * POS Store - Bộ Kiểm Thử Quản Lý Tồn Kho & Biến Động Kho (Inventory & Stock Movements Tests)
+ * Đường dẫn: tests/inventory.test.js
+ *
+ * Điều kiện chuẩn bị:
+ * - Tạo cơ sở dữ liệu kiểm thử cô lập 'pos_store_inventory_test' và nạp toàn bộ cấu trúc bảng.
+ * - Khởi động máy chủ ứng dụng độc lập trên cổng 3004.
+ *
+ * Thao tác kiểm tra:
+ * - Kiểm tra tính bất biến của tồn kho: Chặn tuyệt đối các phương thức sửa trực tiếp (POST, PUT, DELETE trả về 405 Method Not Allowed).
+ * - Kiểm tra tra cứu danh sách tồn kho theo trạng thái: Tất cả, Hết hàng, Tồn kho thấp, phân trang và tìm kiếm theo SKU/tên.
+ * - Kiểm tra sổ cái biến động kho: Ghi nhận chính xác các giao dịch IN (nhập hàng) và OUT (bán hàng), bảo đảm tính toàn vẹn số dư tồn kho.
+ * - Kiểm tra lọc biến động theo ngày dương lịch thực tế (chặn ngày không hợp lệ 30/02 hoặc from_date > to_date).
+ *
+ * Kết quả mong đợi:
+ * - Không cho phép chỉnh sửa tồn kho bằng tay; số dư tồn kho luôn khớp tuyệt đối với tổng biến động IN - OUT.
+ *
+ * Bước dọn dẹp:
+ * - Dừng tiến trình máy chủ cổng 3004 và xóa cơ sở dữ liệu kiểm thử pos_store_inventory_test.
+ */
+
 require('dotenv').config();
 const test = require('node:test');
 const assert = require('node:assert');

@@ -1,8 +1,20 @@
-# Script khoi dong toan bo cac website va dich vu web trong he thong POS Store
+﻿<#
+.SYNOPSIS
+    Kịch bản khởi động toàn bộ dịch vụ web POS Store cục bộ trên hệ điều hành Windows.
+.DESCRIPTION
+    Đường dẫn: scripts/start-all-websites.ps1
+    Mục đích:
+    - Kiểm tra và kích hoạt dịch vụ cơ sở dữ liệu MySQL80 (cổng 3306).
+    - Khởi chạy máy chủ ứng dụng Node.js Express (cổng 3000 và 9101).
+    - Khởi chạy máy chủ phân phối ngược Nginx (cổng 8080).
+    - Khởi chạy máy chủ quản trị CSDL phpMyAdmin (cổng 8081).
+    - Khởi chạy cụm giám sát hiệu năng Prometheus (cổng 9090) và Grafana (cổng 3030).
+#>
+
 $ErrorActionPreference = 'SilentlyContinue'
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host "       KHOI DONG TOAN BO DICH VU WEB LOCAL POS STORE      " -ForegroundColor Yellow
+Write-Host "       KHỞI ĐỘNG TOÀN BỘ DỊCH VỤ WEB LOCAL POS STORE      " -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Kiem tra MySQL Service (MySQL80)

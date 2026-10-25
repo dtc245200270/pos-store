@@ -1,3 +1,18 @@
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - ĐỊNH TUYẾN XÁC THỰC VÀ BẢO MẬT TÀI KHOẢN (AUTHENTICATION)
+ * ==============================================================================
+ * Tệp: routes/auth.js
+ * Mục đích:
+ *   - Quản lý vòng đời đăng nhập, đăng xuất và đổi mật khẩu người dùng.
+ *   - Cơ chế bảo vệ Brute-force theo tài khoản: Tối đa 5 lần thử sai liên tiếp -> khóa 15 phút.
+ *     (Tránh khóa nhầm địa chỉ IP công cộng khi nhiều thu ngân dùng chung mạng NAT).
+ *   - Chống tấn công Session Fixation: Tái tạo session ID mới ngay sau khi đăng nhập thành công.
+ *   - Cấp phát và xác thực mã CSRF Token cho các thao tác gửi biểu mẫu.
+ *   - Thu hồi toàn bộ phiên làm việc cũ trong MySQL khi tài khoản thực hiện đổi mật khẩu.
+ * ==============================================================================
+ */
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
@@ -6,20 +21,25 @@ const router = express.Router();
 
 const { generateCsrfToken, csrfProtection, verifySessionDB, requireLogin } = require('../middleware/auth');
 
-// Quản lý số lần thử đăng nhập theo tài khoản (chống dò mật khẩu theo tài khoản, không khóa nhầm IP dùng chung)
+// Bản đồ trong bộ nhớ theo dõi số lần thử sai theo tên tài khoản: Map<username, { count, lockUntil }>
 const accountLoginAttempts = new Map();
 
-// Cấu hình giới hạn: Tối đa 5 lần thử sai, khóa 15 phút
+// Cấu hình giới hạn: Tối đa 5 lần thử sai, khóa 15 phút (900.000 ms)
 const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 phút (900 giây)
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
+/**
+ * Lấy trạng thái thử đăng nhập của một tài khoản
+ * - Đầu vào: `username` (Chuỗi tên đăng nhập).
+ * - Kết quả: Trả về object `{ count, lockUntil }` hoặc `null` nếu chưa có hoặc đã hết hạn khóa.
+ */
 function getAccountAttempts(username) {
   if (!username) return null;
   const key = String(username).trim().toLowerCase();
   const entry = accountLoginAttempts.get(key);
   if (!entry) return null;
 
-  // Nếu đã hết thời gian chặn, tự động xóa bộ đếm cũ để cho phép thử lại
+  // Nếu đã hết thời gian chặn, tự động xóa bộ đếm cũ để cho phép người dùng thử lại
   if (entry.lockUntil && entry.lockUntil <= Date.now()) {
     accountLoginAttempts.delete(key);
     return null;
@@ -27,6 +47,10 @@ function getAccountAttempts(username) {
   return entry;
 }
 
+/**
+ * Ghi nhận một lần đăng nhập thất bại cho tài khoản
+ * - Tăng biến đếm `count`. Nếu đạt ngưỡng MAX_FAILED_ATTEMPTS, kích hoạt `lockUntil`.
+ */
 function recordFailedAttempt(username) {
   if (!username) return null;
   const key = String(username).trim().toLowerCase();
@@ -45,12 +69,20 @@ function recordFailedAttempt(username) {
   return entry;
 }
 
+/**
+ * Xóa bỏ lịch sử thử sai của tài khoản khi đăng nhập hoặc đổi mật khẩu thành công
+ */
 function clearLoginAttempts(username) {
   if (!username) return;
   const key = String(username).trim().toLowerCase();
   accountLoginAttempts.delete(key);
 }
 
+/**
+ * Định dạng thông điệp phản hồi lỗi khóa tài khoản kèm thời gian chờ cụ thể theo múi giờ Việt Nam
+ * - Đầu vào: `lockUntil` (Timestamp mốc thời gian hết hạn khóa).
+ * - Kết quả: Object chứa chuỗi thông báo, thời gian retryAfterSeconds và lockUntil.
+ */
 function formatLockoutError(lockUntil) {
   const remainingMs = Math.max(0, lockUntil - Date.now());
   const remainingSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
@@ -73,8 +105,16 @@ function formatLockoutError(lockUntil) {
   };
 }
 
+// Tuyến đường lấy mã CSRF token
 router.get('/csrf', generateCsrfToken);
 
+/**
+ * Tuyến đường xử lý đăng nhập hệ thống
+ * - Kiểm tra CSRF token, dữ liệu đầu vào.
+ * - Kiểm tra rate limit theo tài khoản (HTTP 429 nếu đang bị khóa).
+ * - Đối chiếu mật khẩu băm với bcrypt.
+ * - Tái tạo session ID mới (Session Regeneration) để chống Session Fixation.
+ */
 router.post('/login', csrfProtection, async (req, res) => {
   const { username, password } = req.body;
 
@@ -152,6 +192,10 @@ router.post('/login', csrfProtection, async (req, res) => {
   }
 });
 
+/**
+ * Tuyến đường đăng xuất tài khoản
+ * - Hủy session hiện tại phía máy chủ và xóa bỏ cookie connect.sid trên trình duyệt.
+ */
 router.post('/logout', requireLogin, csrfProtection, (req, res) => {
   req.session.destroy((err) => {
     if (err) {
@@ -162,7 +206,17 @@ router.post('/logout', requireLogin, csrfProtection, (req, res) => {
   });
 });
 
-// Đổi mật khẩu cá nhân (yêu cầu mật khẩu hiện tại, mật khẩu mới, xác nhận mật khẩu mới)
+/**
+ * Tuyến đường đổi mật khẩu cá nhân
+ * - Yêu cầu: Đã đăng nhập, truyền đủ current_password, new_password, confirm_password.
+ * - Quy trình:
+ *     1. Kiểm tra mật khẩu mới >= 8 ký tự, khớp xác nhận và khác mật khẩu hiện tại.
+ *     2. Kiểm tra mật khẩu hiện tại bằng bcrypt.compare.
+ *     3. Băm mật khẩu mới với bcrypt (salt 10) và cập nhật bảng users.
+ *     4. Xóa bộ đếm đăng nhập thất bại của tài khoản.
+ *     5. Xóa toàn bộ các phiên làm việc cũ của userId trong bảng sessions để buộc đăng nhập lại trên mọi thiết bị.
+ *     6. Hủy phiên hiện tại và trả về thông báo thành công.
+ */
 router.post('/change-password', requireLogin, csrfProtection, async (req, res) => {
   const { current_password, new_password, confirm_password } = req.body;
 
@@ -236,8 +290,11 @@ router.post('/change-password', requireLogin, csrfProtection, async (req, res) =
   }
 });
 
+/**
+ * Tuyến đường lấy thông tin phiên làm việc hiện tại của người dùng
+ * - Lưu ý: Middleware requireLogin đã tự động cập nhật session.role từ DB mới nhất.
+ */
 router.get('/me', requireLogin, async (req, res) => {
-  // requireLogin đã tự động cập nhật session.role từ DB mới nhất
   res.json({
     userId: req.session.userId,
     username: req.session.username,

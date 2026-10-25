@@ -1,3 +1,15 @@
+# ==============================================================================
+# POS Store - Cấu Hình Máy Chủ Lưu Trữ Nhật Ký Grafana Loki (Windows Host)
+# Tệp: deploy/logging/loki.yml
+#
+# Mục đích:
+# - Quản lý việc tiếp nhận, đánh chỉ mục và lưu trữ log chạy trực tiếp trên hệ điều hành Windows.
+# - Cổng HTTP 3100: Lắng nghe cục bộ 127.0.0.1 để nhận push log từ Alloy và truy vấn từ Grafana.
+# - Đường dẫn lưu trữ: C:/loki/data (bao gồm chunks và rules).
+# - Thời gian lưu giữ mẫu log: Tối đa 168 giờ (7 ngày).
+# ==============================================================================
+
+# Vô hiệu hóa chế độ xác thực đa người thuê cho môi trường đơn cửa hàng
 auth_enabled: false
 
 server:

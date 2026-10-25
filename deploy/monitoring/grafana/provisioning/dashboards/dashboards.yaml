@@ -1,3 +1,12 @@
+# ==============================================================================
+# POS Store - Cấu Hình Nạp Bảng Điều Khiển Cho Grafana (Windows Provisioning)
+# Tệp: deploy/monitoring/grafana/provisioning/dashboards/dashboards.yaml
+#
+# Mục đích:
+# - Tự động nạp bảng điều khiển giám sát từ đường dẫn C:/grafana/conf/provisioning/dashboards.
+# - Chu kỳ cập nhật thay đổi tệp dashboard: 5 giây.
+# ==============================================================================
+
 apiVersion: 1
 
 providers:

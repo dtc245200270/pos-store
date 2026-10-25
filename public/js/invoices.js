@@ -1,4 +1,20 @@
-// Quản lý xem chi tiết & In / Lưu PDF hóa đơn
+/**
+ * ==============================================================================
+ * DỰ ÁN POS STORE - GIAO DIỆN QUẢN LÝ HÓA ĐƠN & IN ẤN (INVOICES FRONTEND)
+ * ==============================================================================
+ * Tệp: public/js/invoices.js
+ * Mục đích:
+ *   - Điều khiển tương tác trang Danh sách hóa đơn bán lẻ (views/invoices.html).
+ *   - Các tính năng chính:
+ *       1. Tải danh sách hóa đơn phân trang (mặc định 10 dòng/trang).
+ *       2. Tìm kiếm theo mã hóa đơn, lọc theo khoảng ngày tạo (từ ngày - đến ngày).
+ *       3. Lọc theo nhân viên bán hàng (chỉ hiển thị dropdown lọc cho Quản lý).
+ *       4. Mở modal xem chi tiết hóa đơn (snapshot tên, đơn vị, giá bán tại thời điểm lập).
+ *       5. Hỗ trợ in hóa đơn nhiệt / lưu PDF bằng giao diện in chuyên biệt (@media print).
+ *       6. Phân biệt rõ hình thức thanh toán: Tiền mặt hoặc Chuyển khoản VietQR kèm nội dung chuyển khoản.
+ * ==============================================================================
+ */
+
 let invoiceModalInstance = null;
 let currentLoadedInvoice = null;
 let currentUser = null;

@@ -1,3 +1,26 @@
+/**
+ * POS Store - Bộ Kiểm Thử Thanh Toán VietQR & Xác Nhận Bán Hàng (VietQR Payment Tests)
+ * Đường dẫn: tests/vietqr-payment.test.js
+ *
+ * Điều kiện chuẩn bị:
+ * - Khởi tạo cơ sở dữ liệu kiểm thử cô lập 'pos_store_vietqr_test'.
+ * - Nạp schema, session migration và migration_02_payment_methods.
+ * - Khởi động máy chủ ứng dụng độc lập trên cổng 3006 kèm cấu hình ngân hàng VietQR.
+ *
+ * Thao tác kiểm tra:
+ * - Quy trình 2 bước (2-step checkout): Chuẩn bị QR (/prepare-qr) và Xác nhận thanh toán (/api/invoices).
+ * - Kiểm tra sinh mã Quick Link chuẩn VietQR chứa đúng mã ngân hàng, số tài khoản, số tiền và nội dung chuyển khoản.
+ * - Kiểm tra xử lý xung đột 409 khi giá bán sản phẩm thay đổi trong lúc khách đang quét mã QR.
+ * - Kiểm tra cờ yêu cầu đối soát (reconciliation_required) khi phát hiện xung đột số tiền hoặc nội dung chuyển khoản.
+ * - Kiểm tra trừ tồn kho an toàn và ghi nhận phương thức thanh toán BANK_TRANSFER.
+ *
+ * Kết quả mong đợi:
+ * - Hoàn tất thanh toán chuyển khoản, tạo hóa đơn thành công và bảo đảm an toàn giao dịch tài chính.
+ *
+ * Bước dọn dẹp:
+ * - Dừng tiến trình máy chủ cổng 3006 và xóa database pos_store_vietqr_test.
+ */
+
 const test = require('node:test');
 const assert = require('node:assert');
 const { spawn } = require('child_process');

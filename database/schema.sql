@@ -1,11 +1,26 @@
+-- ==============================================================================
+-- DỰ ÁN POS STORE - ĐỊNH NGHĨA CƠ SỞ DỮ LIỆU GỐC (CORE DATABASE SCHEMA)
+-- ==============================================================================
+-- Tệp: database/schema.sql
+-- Mục đích:
+--   - Khởi tạo cơ sở dữ liệu pos_store với bảng mã utf8mb4_unicode_ci.
+--   - Khởi tạo 7 bảng dữ liệu cốt lõi:
+--       1. users: Tài khoản nhân viên, băm mật khẩu, phân quyền (MANAGER / CASHIER).
+--       2. products: Danh mục hàng hóa, đơn vị, giá bán, số lượng tồn kho.
+--       3. invoices: Hóa đơn bán hàng, mã chứng từ, tổng tiền, cơ chế chống lặp (request_key/hash).
+--       4. invoice_items: Chi tiết dòng bán, lưu snapshot tên/đơn vị/đơn giá tại thời điểm bán.
+--       5. stock_receipts: Phiếu nhập hàng từ nhà cung cấp, mã chứng từ, tổng tiền nhập.
+--       6. stock_receipt_items: Chi tiết dòng nhập, lưu snapshot sản phẩm và đơn giá vốn.
+--       7. stock_movements: Sổ cái lịch sử biến động kho (Audit Log), ghi nhận delta (+/-) và số dư sau biến động.
+--   - Ràng buộc toàn vẹn dữ liệu:
+--       + Tất cả khóa ngoại sử dụng ON DELETE RESTRICT ON UPDATE RESTRICT để bảo vệ chứng từ kế toán.
+--       + Ràng buộc XOR trên stock_movements: Một dòng biến động chỉ thuộc về hóa đơn HOẶC phiếu nhập.
+-- ==============================================================================
+
 CREATE DATABASE IF NOT EXISTS pos_store
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
-USE pos_store;
-
-SELECT DATABASE() AS current_database;
--- Chọn cơ sở dữ liệu
 USE pos_store;
 
 -- Bảng tài khoản
